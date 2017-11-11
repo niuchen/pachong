@@ -7,6 +7,9 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.NameValuePair;
@@ -15,9 +18,19 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.config.SocketConfig;
+import org.apache.http.conn.HttpClientConnectionManager;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.ssl.SSLContexts;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
@@ -39,18 +52,55 @@ private static String loginurl="https://rapaport.auth0.com/usernamepassword/logi
 	public static String logout="https://member.rapnet.com/Login/LogOut.aspx";
 	
 	
-	/**创建一个待cookie的httpclient工具类**/
-	public static CloseableHttpClient newhttpclient() throws UnsupportedEncodingException{
-     	RequestConfig requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD_STRICT)//标准Cookie策略
-     		.setRedirectsEnabled(false)
-     		   //与服务器连接超时时间：httpclient会创建一个异步线程用以创建socket连接，此处设置该socket的连接超时时间  
-                .setConnectTimeout(100000)  
-              .setSocketTimeout(100000)
-                .build();
-	   CloseableHttpClient httpClient = HttpClients.custom().setDefaultRequestConfig(requestConfig).build();//设置进去
-	  
-	    	return httpClient;
-	}
+//	public void init()  
+//    {  
+//         try {  
+//            SSLContext sslcontext = SSLContexts.custom().loadTrustMaterial(null,  
+//                            new TrustSelfSignedStrategy())  
+//                    .build();  
+//            HostnameVerifier hostnameVerifier = SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;  
+//            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(  
+//                    sslcontext,hostnameVerifier);  
+//            Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()  
+//                    .register("http", PlainConnectionSocketFactory.getSocketFactory())  
+//                    .register("https", sslsf)  
+//                    .build();  
+//            poolConnManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);  
+//            // Increase max total connection to 200  
+//       //     poolConnManager.setMaxTotal(maxTotalPool);  
+//            // Increase default max connection per route to 20  
+//          //  poolConnManager.setDefaultMaxPerRoute(maxConPerRoute);  
+//        //    SocketConfig socketConfig = SocketConfig.custom().setSoTimeout(socketTimeout).build();  
+//        //    poolConnManager.setDefaultSocketConfig(socketConfig);  
+//        } catch (Exception e) {  
+//            log.error("InterfacePhpUtilManager init Exception"+e.toString());  
+//        }  
+//    }  
+//     public CloseableHttpClient getConnection()  
+//    {  
+//        RequestConfig requestConfig = RequestConfig.custom().setConnectionRequestTimeout(connectionRequestTimeout)  
+//                .setConnectTimeout(connectTimeout).setSocketTimeout(socketTimeout).build();  
+//        CloseableHttpClient httpClient = HttpClients.custom()  
+//                    .setConnectionManager(poolConnManager).setDefaultRequestConfig(requestConfig).build();  
+//        if(poolConnManager!=null&&poolConnManager.getTotalStats()!=null)  
+//        {  
+//            log.info("now client pool "+poolConnManager.getTotalStats().toString());  
+//        }  
+//        return httpClient;  
+//    } 
+//    
+//	/**创建一个待cookie的httpclient工具类**/
+//	public static CloseableHttpClient newhttpclient() throws UnsupportedEncodingException{
+//     	RequestConfig requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD_STRICT)//标准Cookie策略
+//     		.setRedirectsEnabled(false)
+//     		   //与服务器连接超时时间：httpclient会创建一个异步线程用以创建socket连接，此处设置该socket的连接超时时间  
+//                .setConnectTimeout(3000)  
+//              .setSocketTimeout(3000)
+//                .build();
+//	   CloseableHttpClient httpClient = HttpClients.custom().setDefaultRequestConfig(requestConfig).build();//设置进去
+//	  
+//	    	return httpClient;
+//	}
 	/**登陆操作  提交使用的post配置**/
 	public static HttpPost newloginPost1() throws UnsupportedEncodingException{
 		logger.error("提交登陆数据");
@@ -147,7 +197,7 @@ private static String loginurl="https://rapaport.auth0.com/usernamepassword/logi
 	 * <p>Found. Redirecting to <a href="https://member.rapnet.com/Login/LoginPage.aspx?code=su8fbKJIKhcqydhX">https://member.rapnet.com/Login/LoginPage.aspx?code=su8fbKJIKhcqydhX</a></p>
  	 * **/
 	public static HttpGet newloginpaga3(String href) throws UnsupportedEncodingException{
-		logger.error("访问首页的html"+href);
+		logger.error("访问首页的html:"+href);
 
 		  // Document doc2 = Jsoup.parse(loginpagahtml); 
 		   //  String href=doc2.select("a").get(0).html();

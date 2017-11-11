@@ -9,11 +9,17 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import java.nio.charset.Charset;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
 
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
@@ -38,6 +44,12 @@ import org.apache.http.client.params.HttpClientParams;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URIUtils;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -49,6 +61,7 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
+import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -67,11 +80,38 @@ public class HttpClientUtil {
     private HttpClientUtil() {}
     
     private static void init() {  
-        if (cm == null) {  
-            cm = new PoolingHttpClientConnectionManager();  
-            cm.setMaxTotal(50);// 整个连接池最大连接数  
-            cm.setDefaultMaxPerRoute(5);// 每路由最大连接数，默认值是2  
-        }  
+   
+			try {
+			     if (cm == null) {  
+			           // cm = new PoolingHttpClientConnectionManager();  
+				          SSLContext sslcontext;
+				sslcontext = SSLContexts.custom().loadTrustMaterial(null,  
+				  new TrustSelfSignedStrategy())  
+  .build();
+				HostnameVerifier hostnameVerifier = SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;  
+				SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(  
+				  sslcontext,hostnameVerifier);  
+				Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()  
+				  .register("http", PlainConnectionSocketFactory.getSocketFactory())  
+				  .register("https", sslsf)  
+				  .build();  
+				cm = new PoolingHttpClientConnectionManager(socketFactoryRegistry);  
+			 
+			            cm.setMaxTotal(50);// 整个连接池最大连接数  
+			            cm.setDefaultMaxPerRoute(5);// 每路由最大连接数，默认值是2 
+			     }  
+			} catch (KeyManagementException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (NoSuchAlgorithmException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (KeyStoreException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}  
+ 
+       
     }  
   
     /** 
@@ -79,9 +119,15 @@ public class HttpClientUtil {
      *  
      * @return 
      */  
-    private static CloseableHttpClient getHttpClient() {  
+    public static CloseableHttpClient getHttpClient() {  
         init();  
-        return HttpClients.custom().setConnectionManager(cm).build();  
+    	RequestConfig requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD_STRICT)//标准Cookie策略
+         		.setRedirectsEnabled(false)
+         		   //与服务器连接超时时间：httpclient会创建一个异步线程用以创建socket连接，此处设置该socket的连接超时时间  
+                //    .setConnectTimeout(100000)  
+                //  .setSocketTimeout(100000)
+                    .build();
+        return HttpClients.custom().setDefaultRequestConfig(requestConfig).setConnectionManager(cm).build();  
     }  
   
     /** 
@@ -224,6 +270,10 @@ public class HttpClientUtil {
     	  }
     
     public static void main(String []d){
+    	if(1==1){
+    		System.out.println("终止了. 防止误操作 废弃的main");
+    		return;
+    	}
 //		client_id=FsYXds0gouXuOtlRFnYsdAjF8nysbRcp
 //				connection=Username-Password-Authentication
 //				password=3

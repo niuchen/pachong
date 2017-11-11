@@ -27,7 +27,7 @@ public class Test {
 		   CloseableHttpClient client=null;
 		 
 				 try {
-					       client=Headerpachong.newhttpclient();
+					       client=HttpClientUtil.getHttpClient();
 					       HttpResponse impes=client.execute(getdata);//执行图片真是路径
 						// 读取新的 URL 地址 
 						   Header header=impes.getFirstHeader("Location");

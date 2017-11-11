@@ -9,6 +9,7 @@ import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +29,7 @@ import org.apache.http.client.CookieStore;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -58,57 +60,70 @@ public class Apiurl implements Job{
 		CloseableHttpClient client=null;
 		int isreunt=0;
 		 try {
-			 client=Headerpachong.newhttpclient();
+			 client=HttpClientUtil.getHttpClient();
 			 /**-----------登陆开始-------------***/
 			HttpPost loginpost= Headerpachong.newloginPost1();
-			 HttpResponse response=client.execute(loginpost);//登陆
+			CloseableHttpResponse  response=client.execute(loginpost);//登陆
 			 tuchuurl=loginpost.getURI().toString();
 			 String newloginPosthtml= EntityUtils.toString(response.getEntity());//获取登陆返回的回调方法数据
 			 logger.error("登陆状态:"+response.getStatusLine().getStatusCode() );
+			 
+			 
+			 response.close();
 			// printResponse(response);
-//			 System.out.println("第一条cookies是" + response.getFirstHeader("set-cookie"));
+//			logger.error("第一条cookies是" + response.getFirstHeader("set-cookie"));
 //		        Header[] hs = response.getHeaders("Set-Cookie");
  			 HttpPost callbackpost= Headerpachong.newcallback2(newloginPosthtml);//生成提交执行回调数据url
  			 /*****$$$$$$$$$登陆结束$$$$$$$$$$$***/
 
  			 /**-----------执行回调读取令牌      开始-------------***/
- 			 HttpResponse  response2=client.execute(callbackpost);//执行提交执行回调数据url
+ 			CloseableHttpResponse  response2=client.execute(callbackpost);//执行提交执行回调数据url
 			 tuchuurl=callbackpost.getURI().toString();
 			 String loginpagahtml= EntityUtils.toString(response2.getEntity());//得到paga注册code 和注册url
-			 System.out.println("loginpagahtml值"+loginpagahtml);
+			 logger.error("loginpagahtml值"+loginpagahtml);
 			 int statuscode = response2.getStatusLine().getStatusCode();
-			 logger.error("回调状态:"+statuscode );
+			 Header header=response2.getFirstHeader("location");
+		 	// response2.close();
+			 logger.error("回调状态:"+statuscode);
 			 /**-----------执行回调读取令牌      结束-------------***/
 			// printResponse(response2);
-			 HttpResponse  response3=null;
-			 if(statuscode==302){
+			 CloseableHttpResponse  response3=null;
+			 HttpGet redirect=null;
+ 			 if(statuscode==302){
 				// 读取新的 URL 地址 
-				   Header header=response2.getFirstHeader("location");
+				
 				   if (header!=null){
 				      String newuri=header.getValue();
-				    
-				         HttpGet redirect=Headerpachong.newloginpaga3(newuri);
- 				         System.out.println("第一次重定向:"+newuri);
+				   //   callbackpost.abort();
+				   //   client.
+ 				     // client=HttpClientUtil.getHttpClient();
+				           redirect=Headerpachong.newloginpaga3(newuri);
+ 				     //    callbackpost.abort();  //终止端口
+  				        logger.error("第一次重定向:"+newuri);
 				         response3=    client.execute(redirect);
-				     //  printResponse(response3);
-				       
-				      
-				        
+				     //  printResponse(response3);		        
 				   }else{
-					   System.out.println("偷空");
+					  logger.error("偷空");
 				   }
 			 }else{
-				 System.out.println("返回的不是重定向");
+				logger.error("返回的不是重定向");
 			 }
-		
+		 
 			 /**-----------访问首页      开始-------------***/
 			 /**二次重定向****/
-			 HttpResponse  redirect2response=null;
-			 if(response3.getStatusLine().getStatusCode()==302){
-			  
-		         System.out.println("第二次重定向:"+response3.getFirstHeader("location").getValue());
-		         HttpGet redirect2 =Headerpachong.newloginpaga3(Headerpachong.root+response3.getFirstHeader("location").getValue());
-		            redirect2response= client.execute(redirect2);
+ 			
+ 			int rep3status=response3.getStatusLine().getStatusCode();
+ 			CloseableHttpResponse  redirect2response=null;
+			 HttpGet redirect2 =null;
+			 if(rep3status==302){
+				 String rep3header=response3.getFirstHeader("location").getValue();
+ 		        logger.error("第二次重定向:"+rep3header);
+		           redirect2 =Headerpachong.newloginpaga3(Headerpachong.root+rep3header);
+		           //   redirect.abort();
+		           //   client.close();
+				    //  client=HttpClientUtil.getHttpClient();
+		        //   response3.close();
+		           redirect2response= client.execute(redirect2);
 			 }else{
 				 logger.error(" 登陆失败.  第二次转发首页不是302");
 				 return 0;
@@ -117,69 +132,45 @@ public class Apiurl implements Job{
 //  			 HttpResponse  response3=client.execute(pagapost);//执行访问首页
 // 			 tuchuurl=pagapost.getURI().toString();
  			 String pagaponse= EntityUtils.toString(redirect2response.getEntity());//得到paga注册code 和注册url
+ 		//	redirect2response.close();
+ 			 //redirect2.abort();  //终止端口
  			 //System.out.println("pagaponse:"+pagaponse);
 //			 logger.error("访问首页状态:"+response3.getStatusLine().getStatusCode()+tuchuurl );
 			 Headerpachong.newfile("d:\\s1.html", pagaponse);
 			 if(pagaponse.indexOf("交易屏")==-1){
 				 logger.error("注册登陆失败. 访问首页 没有找到交易屏关键字    终止.");
-				 if(pagaponse.indexOf("RapNetMainContent")==1){
+				 if(pagaponse.indexOf("RapNetMainContent")!=-1){
 					 logger.error("账号重复登录! 只能稍后等待了");
  				 }
 				 return 0;
 			 } 
- 			 
-//			   String url="https://member.rapnet.com/RapNet/Search/GetImageFile.aspx?LotID=83097553&FileType=IMAGE";
-//			   HttpGet getdata = new HttpGet(url);
-//			 //  getdata.addHeader("Host", "member.rapnet.com");
-//			    getdata.addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:56.0) Gecko/20100101 Firefox/56.0");
-//			 //  getdata.addHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-//			 //  getdata.addHeader("Accept-Language", "zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3");
-//			 //  getdata.addHeader("Accept-Encoding", "gzip, deflate, br");
-//			//   getdata.addHeader("Referer", Referer);
-//			 //  getdata.addHeader("Upgrade-Insecure-Requests", "1");
-//			//   getdata.addHeader("Connection", "keep-alive");
-//			//   getdata.addHeader("Host", "member.rapnet.com");
-// 					 try {
-//						     //  client=Apiurl.newhttpclient();
-//						       HttpResponse impes=client.execute(getdata);//执行图片真是路径
-//							// 读取新的 URL 地址 
-//							   Header header=impes.getFirstHeader("Location");
-//							 if(header!=null){
-//								 String newuri=header.getValue();
-//							     System.out.println("1图片地址:"+impes.getFirstHeader("Location").getValue());
-//							 }else{
-//								 System.out.println("1图片地址空");
-//							 }
-// 							 System.out.println(EntityUtils.toString(impes.getEntity()));
-//					} catch (Exception e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//					}
-//			   
-			 
-			 
+
 			 
 			 /**-----------访问首页      结束-------------***/
 //			 Header[] header=response.getAllHeaders();
 //			 for(Header hobj:header){
-//				 System.out.println(hobj.getName()+":"+hobj.getValue());
+//				logger.error(hobj.getName()+":"+hobj.getValue());
 //			 }
 			 
 			 /**-----------访问交易屏页面     starte-------------***/
 			 HttpGet datapost1= Headerpachong.newpagedata4(tuchuurl);//数据屏的页面首页
 		 
-			 HttpResponse response4=client.execute(datapost1);//执行数据屏
+			 CloseableHttpResponse pingdateresponse4=client.execute(datapost1);//执行数据屏
 			 tuchuurl=datapost1.getURI().toString();
-			 logger.error("交易屏状态:"+response4.getStatusLine().getStatusCode() );
-			 String datahrml= EntityUtils.toString(response4.getEntity());//得到paga注册code 和注册url
+			 logger.error("交易屏状态:"+pingdateresponse4.getStatusLine().getStatusCode() );
+			 String datahrml= EntityUtils.toString(pingdateresponse4.getEntity());//得到paga注册code 和注册url
 			 Headerpachong.newfile("d:\\s2.html", datahrml);
+			// pingdateresponse4.close();
+			//#####
 			 /**-----------访问交易屏页面     ent-------------***/
 			 
 			 
 			 
 			 /**-----------访问 交易屏  某一个交易单元格   打卡数据列表     starte-------------***/
 			  Document doc2 = Jsoup.parse(datahrml); 
-			  String href0=doc2.getElementById("ctl00_cphMainContent_repGrids_ctl00_gvGrid").html();
+			  String tableid="ctl00_cphMainContent_repGrids_ctl00_gvGrid";
+			  String tdid="ctl00_cphMainContent_repGrids_ctl00_gvGrid_ctl02_lnk_IF_Value";
+			  String href0=doc2.getElementById(tableid).html();
 //			  String href2=doc2.getElementById("ctl00_cphMainContent_repGrids_ctl02_gvGrid").html();
 //			  String href4=doc2.getElementById("ctl00_cphMainContent_repGrids_ctl04_gvGrid").html();
 //			  String href6=doc2.getElementById("ctl00_cphMainContent_repGrids_ctl06_gvGrid").html();
@@ -187,8 +178,9 @@ public class Apiurl implements Job{
 //			  String href10=doc2.getElementById("ctl00_cphMainContent_repGrids_ctl10_gvGrid").html();
 //			  String href12=doc2.getElementById("ctl00_cphMainContent_repGrids_ctl12_gvGrid").html();
  			  Document href0doc = Jsoup.parse(href0); 
- 			 Element anode= href0doc.getElementById("ctl00_cphMainContent_repGrids_ctl00_gvGrid_ctl02_lnk_IF_Value");//得到第一个单元格的HTML
- 			String ahref=anode.attr("href");//得到第二个单元格的点击url地址
+ 			 
+ 			 Element anode= href0doc.getElementById(tdid);//得到第一个单元格的HTML
+ 			String ahref=anode.attr("href");//得到第1个单元格的点击url地址
  	    		 String ahrefurl[]=ahref.split("\\."+"\\."+"/");
  	    		 if(ahrefurl.length!=2){
 	    			 logger.error(ahrefurl.length+"--------表格里的 a标签的href链接截取错误"+ahref);
@@ -196,78 +188,96 @@ public class Apiurl implements Job{
  	    		String ahrefu="https://member.rapnet.com/RapNet/"+ahrefurl[1];
 	    		System.out.println("第一个单元格url地址:"+ahrefu);
 	    		  HttpGet newpagetable= Headerpachong.newpagetable(ahrefu,tuchuurl);//访问交易屏中  表格的某个单元格  读取单元格列表
-	    		  response=null;
-	  			 response=client.execute(newpagetable);//执行数据屏
+	    		  
+	    		  CloseableHttpResponse pingdatapageresponse=client.execute(newpagetable);//执行数据屏一个单元格
 	  			// tuchuurl=newpagetable.getURI().toString();
-	  			 logger.error("访问交易屏中  表格的某个单元格  读取单元格列表状态:"+response.getStatusLine().getStatusCode() );
-	  			 String newpagetablehrml= EntityUtils.toString(response.getEntity());//得到paga注册code 和注册url
-	  			Headerpachong.newfile("d:\\s3.html", newpagetablehrml);
+	  			 logger.error("访问交易屏中  表格的某个单元格  读取单元格列表状态:"+pingdatapageresponse.getStatusLine().getStatusCode() );
+	  			 String newpagetablehrml= EntityUtils.toString(pingdatapageresponse.getEntity());//得到paga注册code 和注册url
+	  		//	pingdatapageresponse.close();
+	  			 Headerpachong.newfile("d:\\s3.html", newpagetablehrml);
 		    	 /**-----------访问 交易屏  某一个交易单元格   打开数据列表   ent-------------***/ 
 	  	 
 	  			  Document newpagetablehrmldoc = Jsoup.parse(newpagetablehrml); 
 	  			Elements anodes= newpagetablehrmldoc.select("a[title='View video']");
 	  			System.out.println("总数:"+anodes.size());
 	  			List<String> shulsit=new ArrayList<String>();
-	  			try {
-	  				 HttpResponse impes;
+ 	  			
 	  				 int k=0;
 					for(Element eobj:anodes){
 						String hrefeobj=eobj.attr("href");
 						hrefeobj=Headerpachong.root+hrefeobj;
-					 //   HttpGet imgerget= Headerpachong.newimger(hrefeobj);
-					    System.out.println((k++)+"解析前图片地址:"+hrefeobj);
- 					    shulsit.add(analysis(hrefeobj).get("LotID"));//得到ID
-// 					   impes  =client.execute(imgerget);//执行图片真是路径
-//					    int imstatuscode = impes.getStatusLine().getStatusCode();
-//					    if(imstatuscode==302){
-//					    	// 读取新的 URL 地址 
-//							   Header header=impes.getFirstHeader("Location");
-//							 if(header!=null){
-//								 String newuri=header.getValue();
-//							         System.out.println("图片地址解析后:"+impes.getFirstHeader("Location").getValue());
-//							 }else{
-//								 logger.error("图片地址空"+imgerget);
-//							 }
-//					    }else{
-//					    	logger.error("图片解析错误.没有得到地址或302状态"+imgerget);
-//					    }
- 					//System.out.println(EntityUtils.toString(impes.getEntity()));//
-					//  System.out.println(lotid+":图片状态:"+imstatuscode );
-					    impes=null;
-					}
-				} catch (Exception e) {
-					logger.error("图片解析异常");
-					e.printStackTrace();
-				} 
+  					    shulsit.add(hrefeobj);//得到ID
+ 					}
+					HashSet h = new HashSet(shulsit);     //去重 
+					shulsit.clear();      
+					shulsit.addAll(h); 
+			
 	  			
-	  			
-	  			System.out.println("产品解析开始");
-String efdurl="https://member.rapnet.com/RapNet/Search/ExpandFullDetails.aspx"
-		+ "?DiamondID=%&Page=1&RowID=0&SearchType=REGULAR&DRows=50&Xtn=-1&newcerts=0";//详情的基本链接 DiamondID的%是要替换成产品信息id
-	  			for(String sid:shulsit){
-	  			  HttpGet efdget= 	Headerpachong.newExpandFullDetails( efdurl.replaceAll("[%]", sid));
-	  			  HttpResponse edfpes=client.execute(efdget);//
-	  			  String edfpeshrml= EntityUtils.toString(edfpes.getEntity());//
- 	  			  System.out.println("详细信息状态:"+edfpes.getStatusLine().getStatusCode()+":"+efdurl.replaceAll("[%]", sid));
- 	  			  printResponse(edfpes);
- 	  			  
- 	  			 Headerpachong.newfile("d:\\paga\\"+sid+".html", edfpeshrml);
- 	  			 break;
-	  			}
-	  		 
+				
+			  			System.out.println("产品解析开始,数量:"+shulsit.size());
+		String efdurl="https://member.rapnet.com/RapNet/Search/ExpandFullDetails.aspx"
+				+ "?DiamondID=%&Page=1&RowID=0&SearchType=REGULAR&DRows=50&Xtn=-1&newcerts=0";//详情的基本链接 DiamondID的%是要替换成产品信息id
+			  			for(String hrefeobj:shulsit){
+			  				try {
+			  				  logger.error((k++)+"解析前图片地址:"+hrefeobj);
+ 								//hrefeobj=Headerpachong.root+hrefeobj;
+					           HttpGet imgerget= Headerpachong.newimger(hrefeobj);
+					           CloseableHttpResponse   impes  =client.execute(imgerget);//执行图片真是路径
+								    int imstatuscode = impes.getStatusLine().getStatusCode();
+								    String newuri="";
+								    if(imstatuscode==302){
+								    	// 读取新的 URL 地址 
+										   Header imgheader=impes.getFirstHeader("Location");
+										 if(imgheader!=null){
+											   newuri=imgheader.getValue();
+										        logger.error("图片地址解析后:"+newuri);
+										 }else{
+											 logger.error("图片地址空"+imgerget);
+										 }
+								    }else{
+								    	logger.error("图片解析错误.没有得到地址或302状态"+imgerget);
+								    }
+								   // imgerget.abort();  //终止端口
+								    impes.close();
+								    
+			  				/***产品详情解析开始****/	
+			  					  String sid= analysis(hrefeobj).get("LotID");
+		 			  			  HttpGet efdget= 	Headerpachong.newExpandFullDetails( efdurl.replaceAll("[%]", sid));
+		 			  			CloseableHttpResponse edfpes=client.execute(efdget);//
+					  			  String edfpeshrml= EntityUtils.toString(edfpes.getEntity());//
+					  			  edfpeshrml+="<a id='imgurl' heft='"+newuri+"'>";
+				 	  			 logger.error("详细信息状态:"+edfpes.getStatusLine().getStatusCode()+":"+efdurl.replaceAll("[%]", sid));
+				 	  			/***产品详情解析    ent****/	
+				 	  			//当前查询的ctl 是多少  表示属于那个大模块
+				 	  			 String headid=newpagetablehrmldoc.select("head").get(0).attr("id").split("_")[0];
+				 	  			//第几页数据
+				 	  			String pagesun=newpagetablehrmldoc.getElementById(headid+"_cphMainContent_lblPageNumBottom").text();
+				 	  			String filename="d:\\spaga\\"+tableid+"\\"+tdid+"\\"+sid+"\\"+pagesun+".html";
+				 	  			logger.error("产品详情的页面保存路径:"+filename);
+				 	  			 //  printResponse(edfpes);
+ 				  	  			 Headerpachong.newfile(filename, edfpeshrml);
+ 				  	  		  // edfpes.close();
+				 	  			// break;
+			  				} catch (Exception e) {
+								logger.error("产品详情和图片解析异常"+hrefeobj);
+								e.printStackTrace();
+							} 
+			  			}
+			  			
+			
 //	  			https://member.rapnet.com/RapNet/Search/GetImageFile.aspx?LotID=85912218&FileType=IMAGE
 	  			
 	//  			https://member.rapnet.com/RapNet/Search/ExpandFullDetails.aspx?DiamondID=85912218&Page=1&RowID=1&SearchType=REGULAR&DRows=50&Xtn=-1&newcerts=0
 //	  			 
  	    	 /**----------- 执行 数据列表   翻页     starte-------------***/ 
-	  			 System.out.println("翻页开始");
+	  			logger.error("翻页开始");
 	  		    HttpPost newTurnthepage=Headerpachong.newTurnthepage(newpagetablehrml, tuchuurl);
 	  		   // tuchuurl=  newTurnthepage.getURI().toString();
-	  		    System.out.println(newTurnthepage.getURI().toString());
+	  		   logger.error(newTurnthepage.getURI().toString());
 		  		 response=null;
 	  			 response=client.execute(newTurnthepage);//执行翻页
 	  			 String newpagetablehrml2= EntityUtils.toString(response.getEntity());//得到paga注册code 和注册url
-	  			 System.out.println("翻页状态"+ response.getStatusLine().getStatusCode()+":");
+	  			logger.error("翻页状态"+ response.getStatusLine().getStatusCode()+":");
 	  		//	 sysh(response.getAllHeaders());
 	  			printResponse(response);
 	  			System.out.println("翻页状态"+ response.getStatusLine().getStatusCode()+":");
@@ -303,7 +313,7 @@ String efdurl="https://member.rapnet.com/RapNet/Search/ExpandFullDetails.aspx"
 // 		    		System.out.println(ahref);
 // 		    		//https://member.rapnet.com/RapNet/Search/Results.aspx?Code=dqkPeRM4L7zAMOV%2fIQAfkw%3d%3d&SearchSessionID=149113546
 // 		    	 }else{
-// 		    		 System.out.println(ahref);
+// 		    		logger.error(ahref);
 // 		    	 }
 // 		    	 break;
 // 		     }
@@ -319,22 +329,23 @@ String efdurl="https://member.rapnet.com/RapNet/Search/ExpandFullDetails.aspx"
 			if(client!=null){
 				try {
 					 HttpGet logout= Headerpachong.logout99(tuchuurl);//退出登陆 方式占用不释放下次报错.
-					 HttpResponse response=client.execute(logout);//执行退出登陆
+					 CloseableHttpResponse response=client.execute(logout);//执行退出登陆
 					 logger.error("退出登陆:"+response.getStatusLine().getStatusCode() );
 					 logger.error(""+response.toString() );
 					 logger.error("");
 					 logger.error("");
+					 response.close();
 					client.close();
 				} catch (IOException e) {
 					isreunt=0;
  					// TODO Auto-generated catch block
 					e.printStackTrace();
 					logger.error(e);
-				}
+ 				}
 			}
 		}
 //		 if(isreunt!=1){
-//			 System.out.println("递归调用 因为有没有通过的操作.");
+//			logger.error("递归调用 因为有没有通过的操作.");
 // 			  Apiurl.zhixing();
 //		 }else{
 		     return isreunt;
@@ -409,21 +420,21 @@ String efdurl="https://member.rapnet.com/RapNet/Search/ExpandFullDetails.aspx"
 	        // 获取响应消息实体
 	        HttpEntity entity = httpResponse.getEntity();
 	        // 响应状态
-	        System.out.println("status:" + httpResponse.getStatusLine());
-	        System.out.println("headers:");
+	       logger.error("status:" + httpResponse.getStatusLine());
+	       logger.error("headers:");
 	        HeaderIterator iterator = httpResponse.headerIterator();
 	        while (iterator.hasNext()) {
 	        	Header h=(Header) iterator.next();
-	            System.out.println("\t" + h.getName());
-	            System.out.println("\t" + h.getValue());
-	            System.out.println("\t" + h.getName());
+	           logger.error("\t" + h.getName());
+	           logger.error("\t" + h.getValue());
+	           logger.error("\t" + h.getName());
 	            
 	        }
 	        // 判断响应实体是否为空
 	        if (entity != null) {
 //	            String responseString = EntityUtils.toString(entity);
-//	            System.out.println("response length:" + responseString.length());
-//	            System.out.println("response content:"
+//	           logger.error("response length:" + responseString.length());
+//	           logger.error("response content:"
 //	                    + responseString.replace("\r\n", ""));
 	        }
 	    }
@@ -431,11 +442,11 @@ String efdurl="https://member.rapnet.com/RapNet/Search/ExpandFullDetails.aspx"
 	 //从响应信息中获取cookie
     public static String setCookie(HttpResponse httpResponse)
     {
-        System.out.println("----setCookieStore");
+       logger.error("----setCookieStore");
         Header headers[] = httpResponse.getHeaders("Set-Cookie");
         if (headers == null || headers.length==0)
         {
-            System.out.println("----there are no cookies");
+           logger.error("----there are no cookies");
             return null;
         }
         String cookie = "";
@@ -457,7 +468,7 @@ String efdurl="https://member.rapnet.com/RapNet/Search/ExpandFullDetails.aspx"
             }
             cookieMap.put(c.split("=")[0], c.split("=").length == 1 ? "":(c.split("=").length ==2?c.split("=")[1]:c.split("=",2)[1]));
         }
-        System.out.println("----setCookieStore success");
+       logger.error("----setCookieStore success");
         String cookiesTmp = "";
         for (String key :cookieMap.keySet())
         {
