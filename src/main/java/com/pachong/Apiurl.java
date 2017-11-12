@@ -83,7 +83,7 @@ public class Apiurl implements Job{
 			 logger.error("loginpagahtml值"+loginpagahtml);
 			 int statuscode = response2.getStatusLine().getStatusCode();
 			 Header header=response2.getFirstHeader("location");
-		 	// response2.close();
+		 	 response2.close();
 			 logger.error("回调状态:"+statuscode);
 			 /**-----------执行回调读取令牌      结束-------------***/
 			// printResponse(response2);
@@ -122,8 +122,9 @@ public class Apiurl implements Job{
 		           //   redirect.abort();
 		           //   client.close();
 				    //  client=HttpClientUtil.getHttpClient();
-		        //   response3.close();
+		       
 		           redirect2response= client.execute(redirect2);
+		           response3.close();
 			 }else{
 				 logger.error(" 登陆失败.  第二次转发首页不是302");
 				 return 0;
@@ -136,7 +137,7 @@ public class Apiurl implements Job{
  			 //redirect2.abort();  //终止端口
  			 //System.out.println("pagaponse:"+pagaponse);
 //			 logger.error("访问首页状态:"+response3.getStatusLine().getStatusCode()+tuchuurl );
-			 Headerpachong.newfile("d:\\s1.html", pagaponse);
+			// Headerpachong.newfile("d:\\s1.html", pagaponse);
 			 if(pagaponse.indexOf("交易屏")==-1){
 				 logger.error("注册登陆失败. 访问首页 没有找到交易屏关键字    终止.");
 				 if(pagaponse.indexOf("RapNetMainContent")!=-1){
@@ -159,7 +160,7 @@ public class Apiurl implements Job{
 			 tuchuurl=datapost1.getURI().toString();
 			 logger.error("交易屏状态:"+pingdateresponse4.getStatusLine().getStatusCode() );
 			 String datahrml= EntityUtils.toString(pingdateresponse4.getEntity());//得到paga注册code 和注册url
-			 Headerpachong.newfile("d:\\s2.html", datahrml);
+		//	 Headerpachong.newfile("d:\\s2.html", datahrml);
 			// pingdateresponse4.close();
 			//#####
 			 /**-----------访问交易屏页面     ent-------------***/
@@ -206,85 +207,85 @@ public class Apiurl implements Job{
 	   		 	String PageCoun=newpagetablehrmldoc.getElementById(headid+"_cphMainContent_lblPageCount").text();//总共有几页   如果是空证明就一页
 	   		 
 	   		
-	   	    	int AmountStonesint=Integer.valueOf(AmountStones);
-	   		    if(AmountStonesint<1){logger.error("数据获取第一页 竟然没有一条数据.  请查看错误"); }
-	   		    logger.error("产品列表,数量:"+AmountStonesint);
-	   		   //循环页面的列表数据
-	   	    	for (int i = 2; i < AmountStonesint+2; i++) {
-	   	    		String id="";
-	   	    		if(i<10){id="0"+i;}else{id=i+"";}
-	   	    		String pid=newpagetablehrmldoc.getElementById("ctl00_cphMainContent_gvResults_ctl"+id+"_hidDiamondID").val();//产品id
-	   	    		String file= "ctl00_cphMainContent_gvResults_ctl"+id+"_lblCertFile";//获取页面里的证书访问的路径
-	   	    		String imager=	"ctl00_cphMainContent_gvResults_ctl"+id+"_lblImageFile";//获取页面图片访问的路径
-	   	    		Elements filee=newpagetablehrmldoc.getElementById(file).select("a");
-	   	    		Elements imagere=newpagetablehrmldoc.getElementById(imager).select("a");
-	   	    		if(filee.size()==1&&imagere.size()==1){
-	   	    			String fileeheft=Headerpachong.root+filee.get(0).attr("href");
-	   	    			String imagereheft=Headerpachong.root+imagere.get(0).attr("href");
-	   	    			logger.error(i+"："+pid+"：准备解析的产品文件路径:"+fileeheft);
-	   	    			logger.error(i+"："+pid+"：准备解析的产品图片路径:"+imagereheft);
-	   	    			try {
-	   	    				/**文件地址解析      开始***/
-	   	    		     CloseableHttpResponse   filepes  =client.execute( Headerpachong.newimger(fileeheft));//执行图片真是路径
-						    int filestatuscode = filepes.getStatusLine().getStatusCode();
-						    logger.error(i+"："+pid+"：文件地址解析状态:"+filestatuscode);
-						    String newfileuri="";
-						    if(filestatuscode==302){
-						    	// 读取新的 URL 地址 
-								   Header imgheader=filepes.getFirstHeader("Location");
-								 if(imgheader!=null){
-									 newfileuri=imgheader.getValue();
-								        logger.error(i+"："+pid+"：文件地址解析后:"+newfileuri);
-								 }else{ logger.error(i+"："+pid+"：文件地址空"+imagereheft); }
-						    }else{
-						    	logger.error(i+"："+pid+"：文件解析错误.没有得到地址或302状态"+filestatuscode+":"+imagereheft);
-						    }
-						   // imgerget.abort();  //终止端口
-						    filepes.close();
-							/**文件地址解析     接受***/
-						    
-							/**图片地址解析      开始***/
-	   	    		     CloseableHttpResponse   impes  =client.execute( Headerpachong.newimger(imagereheft));//执行图片真是路径
-						    int imstatuscode = impes.getStatusLine().getStatusCode();
-						    logger.error(i+"："+pid+"：文件地址解析状态:"+filestatuscode);
-						    String newimguri="";
-						    if(imstatuscode==302){
-						    	// 读取新的 URL 地址 
-								   Header imgheader=impes.getFirstHeader("Location");
-								 if(imgheader!=null){
-									 newimguri=imgheader.getValue();
-								        logger.error(i+"："+pid+"：图片地址解析后:"+newimguri);
-								 }else{ logger.error(i+"："+pid+"：图片地址空"+imagereheft); }
-						    }else{
-						    	logger.error(i+"："+pid+"：图片解析错误.没有得到地址或302状态"+imstatuscode+":"+imagereheft);
-						    }
-						   // imgerget.abort();  //终止端口
-						    impes.close();
-							/**文件地址解析      结束***/
-						    
-			  				/***产品详情解析开始****/	
-		 			  			  HttpGet efdget= 	Headerpachong.newExpandFullDetails( Headerpachong.efdurl.replaceAll("[%]", pid));//产品详情url
-		 			  			CloseableHttpResponse edfpes=client.execute(efdget);//
-					  			  String edfpeshrml= EntityUtils.toString(edfpes.getEntity());//
-					  			  edfpeshrml+="<a id='imgurl' heft='"+newimguri+"'>"+"<a id='flieurl' heft='"+newfileuri+"'>";
-				 	  			 logger.error("详细信息状态:"+edfpes.getStatusLine().getStatusCode()+":"+efdget.getURI().toString());
-				 	  			/***产品详情解析    ent****/	
-				 	  			//
-				 	  			String filename="d:\\spaga\\"+tableid+"\\"+tdid+"\\"+pid+"_"+pagesun+".html";
-				 	  			logger.error("产品详情的页面保存路径:"+filename);
-				 	  			 //  printResponse(edfpes);
- 				  	  			 Headerpachong.newfile(filename, edfpeshrml);
- 				  	  		  // edfpes.close();
-				 	  			// break;
-			  				} catch (Exception e) {
-								logger.error(i+"："+pid+"：产品详情和图片解析异常");
-								e.printStackTrace();
-							} 
-			      
- 	   	    		}else{
- 	   	    			logger.error(i+"："+pid+"文件图片不是都存在   开始跳过.");
-	   	    		}
-				}
+//	   	    	int AmountStonesint=Integer.valueOf(AmountStones);
+//	   		    if(AmountStonesint<1){logger.error("数据获取第一页 竟然没有一条数据.  请查看错误"); }
+//	   		    logger.error("产品列表,数量:"+AmountStonesint);
+//	   		   //循环页面的列表数据
+//	   	    	for (int i = 2; i < AmountStonesint+2; i++) {
+//	   	    		String id="";
+//	   	    		if(i<10){id="0"+i;}else{id=i+"";}
+//	   	    		String pid=newpagetablehrmldoc.getElementById("ctl00_cphMainContent_gvResults_ctl"+id+"_hidDiamondID").val();//产品id
+//	   	    		String file= "ctl00_cphMainContent_gvResults_ctl"+id+"_lblCertFile";//获取页面里的证书访问的路径
+//	   	    		String imager=	"ctl00_cphMainContent_gvResults_ctl"+id+"_lblImageFile";//获取页面图片访问的路径
+//	   	    		Elements filee=newpagetablehrmldoc.getElementById(file).select("a");
+//	   	    		Elements imagere=newpagetablehrmldoc.getElementById(imager).select("a");
+//	   	    		if(filee.size()==1&&imagere.size()==1){
+//	   	    			String fileeheft=Headerpachong.root+filee.get(0).attr("href");
+//	   	    			String imagereheft=Headerpachong.root+imagere.get(0).attr("href");
+//	   	    			logger.error(i+"："+pid+"：准备解析的产品文件路径:"+fileeheft);
+//	   	    			logger.error(i+"："+pid+"：准备解析的产品图片路径:"+imagereheft);
+//	   	    			try {
+//	   	    				/**文件地址解析      开始***/
+//	   	    		     CloseableHttpResponse   filepes  =client.execute( Headerpachong.newimger(fileeheft));//执行图片真是路径
+//						    int filestatuscode = filepes.getStatusLine().getStatusCode();
+//						    logger.error(i+"："+pid+"：文件地址解析状态:"+filestatuscode);
+//						    String newfileuri="";
+//						    if(filestatuscode==302){
+//						    	// 读取新的 URL 地址 
+//								   Header imgheader=filepes.getFirstHeader("Location");
+//								 if(imgheader!=null){
+//									 newfileuri=imgheader.getValue();
+//								        logger.error(i+"："+pid+"：文件地址解析后:"+newfileuri);
+//								 }else{ logger.error(i+"："+pid+"：文件地址空"+imagereheft); }
+//						    }else{
+//						    	logger.error(i+"："+pid+"：文件解析错误.没有得到地址或302状态"+filestatuscode+":"+imagereheft);
+//						    }
+//						   // imgerget.abort();  //终止端口
+//						    filepes.close();
+//							/**文件地址解析     接受***/
+//						    
+//							/**图片地址解析      开始***/
+//	   	    		     CloseableHttpResponse   impes  =client.execute( Headerpachong.newimger(imagereheft));//执行图片真是路径
+//						    int imstatuscode = impes.getStatusLine().getStatusCode();
+//						    logger.error(i+"："+pid+"：文件地址解析状态:"+filestatuscode);
+//						    String newimguri="";
+//						    if(imstatuscode==302){
+//						    	// 读取新的 URL 地址 
+//								   Header imgheader=impes.getFirstHeader("Location");
+//								 if(imgheader!=null){
+//									 newimguri=imgheader.getValue();
+//								        logger.error(i+"："+pid+"：图片地址解析后:"+newimguri);
+//								 }else{ logger.error(i+"："+pid+"：图片地址空"+imagereheft); }
+//						    }else{
+//						    	logger.error(i+"："+pid+"：图片解析错误.没有得到地址或302状态"+imstatuscode+":"+imagereheft);
+//						    }
+//						   // imgerget.abort();  //终止端口
+//						    impes.close();
+//							/**文件地址解析      结束***/
+//						    
+//			  				/***产品详情解析开始****/	
+//		 			  			  HttpGet efdget= 	Headerpachong.newExpandFullDetails( Headerpachong.efdurl.replaceAll("[%]", pid));//产品详情url
+//		 			  			CloseableHttpResponse edfpes=client.execute(efdget);//
+//					  			  String edfpeshrml= EntityUtils.toString(edfpes.getEntity());//
+//					  			  edfpeshrml+="<a id='imgurl' heft='"+newimguri+"'>"+"<a id='flieurl' heft='"+newfileuri+"'>";
+//				 	  			 logger.error("详细信息状态:"+edfpes.getStatusLine().getStatusCode()+":"+efdget.getURI().toString());
+//				 	  			/***产品详情解析    ent****/	
+//				 	  			//
+//				 	  			String filename="d:\\spaga\\"+tableid+"\\"+tdid+"\\"+pid+"_"+pagesun+".html";
+//				 	  			logger.error("产品详情的页面保存路径:"+filename);
+//				 	  			 //  printResponse(edfpes);
+// 				  	  			 Headerpachong.newfile(filename, edfpeshrml);
+// 				  	  		  // edfpes.close();
+//				 	  			// break;
+//			  				} catch (Exception e) {
+//								logger.error(i+"："+pid+"：产品详情和图片解析异常");
+//								e.printStackTrace();
+//							} 
+//			      
+// 	   	    		}else{
+// 	   	    			logger.error(i+"："+pid+"文件图片不是都存在   开始跳过.");
+//	   	    		}
+//				}
 	  			  
 	  		 
 			

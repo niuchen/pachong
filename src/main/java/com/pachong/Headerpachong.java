@@ -355,25 +355,25 @@ private static String loginurl="https://rapaport.auth0.com/usernamepassword/logi
 //	    	String ctl00_antiforgery=;
 	    	List<NameValuePair> param2=new ArrayList<NameValuePair>();
 	    	 
-//	    	param2.add(new BasicNameValuePair("TopSearchBox",""));
-//	    	param2.add(new BasicNameValuePair("__ASYNCPOST","true"));
-//	    	param2.add(new BasicNameValuePair("__EVENTARGUMENT",""));
-//	    	param2.add(new BasicNameValuePair("__EVENTTARGET","ctl00$cphMainContent$lbntNavigate5"));
-//	    	param2.add(new BasicNameValuePair("__EVENTVALIDATION",newpagetabled.getElementById("__EVENTVALIDATION").attr("value")));
-// 	    	param2.add(new BasicNameValuePair("__COMPRESSEDVIEWSTATE",newpagetabled.getElementById("__COMPRESSEDVIEWSTATE").attr("value")));
-//     
-//  
-//	    	param2.add(new BasicNameValuePair("__VIEWSTATE", ""));
-//	    	param2.add(new BasicNameValuePair("__VIEWSTATEENCRYPTED", ""));
-//	    	param2.add(new BasicNameValuePair("ctl00$ScriptManager1", "ctl00$cphMainContent$udpMain|ctl00$cphMainContent$lbntNavigate5"));
-// 	    	param2.add(new BasicNameValuePair("ctl00$antiforgery", newpagetabled.getElementById("ctl00_antiforgery").attr("value")));
-// 	    	  param2.add(new BasicNameValuePair("ctl00$cphMainContent$hfSelectedDiaomnds", ""));
-// 	    	  param2.add(new BasicNameValuePair("ctl00$cphMainContent$hidCurrentStartRow", ""));
-// 	    	  param2.add(new BasicNameValuePair("ctl00$cphMainContent$txtDialogMsg", ""));
-// 	    	  param2.add(new BasicNameValuePair("ctl00$cphMainContent$txtDialogMsgType", ""));
-// 	    	  param2.add(new BasicNameValuePair("ctl00$cphMainContent$txtMarkup", ""));
-// 	    	  param2.add(new BasicNameValuePair("ctl00$cphMainContent$txtSelectedLots", ""));
-// 	    	  param2.add(new BasicNameValuePair("ctl00$cphMainContent$txtSession", ""));
+	    	param2.add(new BasicNameValuePair("TopSearchBox",""));
+	    	param2.add(new BasicNameValuePair("__ASYNCPOST","true"));
+	    	param2.add(new BasicNameValuePair("__EVENTARGUMENT",""));
+	    	param2.add(new BasicNameValuePair("__EVENTTARGET","ctl00$cphMainContent$lbntNavigate5"));
+	    	param2.add(new BasicNameValuePair("__EVENTVALIDATION",newpagetabled.getElementById("__EVENTVALIDATION").attr("value")));
+ 	    	param2.add(new BasicNameValuePair("__COMPRESSEDVIEWSTATE",newpagetabled.getElementById("__COMPRESSEDVIEWSTATE").attr("value")));
+     
+  
+	    	param2.add(new BasicNameValuePair("__VIEWSTATE", ""));
+	    	param2.add(new BasicNameValuePair("__VIEWSTATEENCRYPTED", ""));
+	    	param2.add(new BasicNameValuePair("ctl00$ScriptManager1", "ctl00$cphMainContent$udpMain|ctl00$cphMainContent$lbntNavigate5"));
+ 	    	param2.add(new BasicNameValuePair("ctl00$antiforgery", newpagetabled.getElementById("ctl00_antiforgery").attr("value")));
+ 	    	  param2.add(new BasicNameValuePair("ctl00$cphMainContent$hfSelectedDiaomnds", ""));
+ 	    	  param2.add(new BasicNameValuePair("ctl00$cphMainContent$hidCurrentStartRow", ""));
+ 	    	  param2.add(new BasicNameValuePair("ctl00$cphMainContent$txtDialogMsg", ""));
+ 	    	  param2.add(new BasicNameValuePair("ctl00$cphMainContent$txtDialogMsgType", ""));
+ 	    	  param2.add(new BasicNameValuePair("ctl00$cphMainContent$txtMarkup", ""));
+ 	    	  param2.add(new BasicNameValuePair("ctl00$cphMainContent$txtSelectedLots", ""));
+ 	    	  param2.add(new BasicNameValuePair("ctl00$cphMainContent$txtSession", ""));
  	 
 //	    	for(int shu=2;shu<52;shu++){
 //	    		String shuzi="";
