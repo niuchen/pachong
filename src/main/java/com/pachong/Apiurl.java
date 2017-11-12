@@ -167,9 +167,9 @@ public class Apiurl implements Job{
 			 
 			 
 			 /**-----------访问 交易屏  某一个交易单元格   打卡数据列表     starte-------------***/
-			  Document doc2 = Jsoup.parse(datahrml); 
-			  String tableid="ctl00_cphMainContent_repGrids_ctl00_gvGrid";
-			  String tdid="ctl00_cphMainContent_repGrids_ctl00_gvGrid_ctl02_lnk_IF_Value";
+			  Document doc2 = Jsoup.parse(datahrml); //交易盘的页面解析器
+			  String tableid="ctl00_cphMainContent_repGrids_ctl00_gvGrid";//第几个表
+			  String tdid="ctl00_cphMainContent_repGrids_ctl00_gvGrid_ctl02_lnk_IF_Value";//表中的一个单元格
 			  String href0=doc2.getElementById(tableid).html();
 //			  String href2=doc2.getElementById("ctl00_cphMainContent_repGrids_ctl02_gvGrid").html();
 //			  String href4=doc2.getElementById("ctl00_cphMainContent_repGrids_ctl04_gvGrid").html();
@@ -181,7 +181,7 @@ public class Apiurl implements Job{
  			 
  			 Element anode= href0doc.getElementById(tdid);//得到第一个单元格的HTML
  			String ahref=anode.attr("href");//得到第1个单元格的点击url地址
- 	    		 String ahrefurl[]=ahref.split("\\."+"\\."+"/");
+ 	    		 String ahrefurl[]=ahref.split("\\."+"\\."+"/");//要把路径的../截取掉.
  	    		 if(ahrefurl.length!=2){
 	    			 logger.error(ahrefurl.length+"--------表格里的 a标签的href链接截取错误"+ahref);
  	    		 }
@@ -197,73 +197,96 @@ public class Apiurl implements Job{
 	  			 Headerpachong.newfile("d:\\s3.html", newpagetablehrml);
 		    	 /**-----------访问 交易屏  某一个交易单元格   打开数据列表   ent-------------***/ 
 	  	 
+	  			 
+	  			 /**--------------开始i执行第一页的列表数据的解析存储。 包括 图片文件的接口地址， 产品详细数据-----------****/
 	  			  Document newpagetablehrmldoc = Jsoup.parse(newpagetablehrml); 
-	  			Elements anodes= newpagetablehrmldoc.select("a[title='View video']");
-	  			System.out.println("总数:"+anodes.size());
-	  			List<String> shulsit=new ArrayList<String>();
- 	  			
-	  				 int k=0;
-					for(Element eobj:anodes){
-						String hrefeobj=eobj.attr("href");
-						hrefeobj=Headerpachong.root+hrefeobj;
-  					    shulsit.add(hrefeobj);//得到ID
- 					}
-					HashSet h = new HashSet(shulsit);     //去重 
-					shulsit.clear();      
-					shulsit.addAll(h); 
-			
-	  			
-				
-			  			System.out.println("产品解析开始,数量:"+shulsit.size());
-		String efdurl="https://member.rapnet.com/RapNet/Search/ExpandFullDetails.aspx"
-				+ "?DiamondID=%&Page=1&RowID=0&SearchType=REGULAR&DRows=50&Xtn=-1&newcerts=0";//详情的基本链接 DiamondID的%是要替换成产品信息id
-			  			for(String hrefeobj:shulsit){
-			  				try {
-			  				  logger.error((k++)+"解析前图片地址:"+hrefeobj);
- 								//hrefeobj=Headerpachong.root+hrefeobj;
-					           HttpGet imgerget= Headerpachong.newimger(hrefeobj);
-					           CloseableHttpResponse   impes  =client.execute(imgerget);//执行图片真是路径
-								    int imstatuscode = impes.getStatusLine().getStatusCode();
-								    String newuri="";
-								    if(imstatuscode==302){
-								    	// 读取新的 URL 地址 
-										   Header imgheader=impes.getFirstHeader("Location");
-										 if(imgheader!=null){
-											   newuri=imgheader.getValue();
-										        logger.error("图片地址解析后:"+newuri);
-										 }else{
-											 logger.error("图片地址空"+imgerget);
-										 }
-								    }else{
-								    	logger.error("图片解析错误.没有得到地址或302状态"+imgerget);
-								    }
-								   // imgerget.abort();  //终止端口
-								    impes.close();
-								    
+	  			String headid=newpagetablehrmldoc.select("head").get(0).attr("id").split("_")[0];//获取head的内容当前查询的ctl 是多少  表示属于那个大模块  head表情的id有一个
+	   		 	String pagesun=newpagetablehrmldoc.getElementById(headid+"_cphMainContent_lblPageNumBottom").text();//第几页数据
+	  		 	String AmountStones=newpagetablehrmldoc.getElementById(headid+"_cphMainContent_SummaryResults1_lblAmountStones").text();//这一页有几条数据
+	   		 	String PageCoun=newpagetablehrmldoc.getElementById(headid+"_cphMainContent_lblPageCount").text();//总共有几页   如果是空证明就一页
+	   		 
+	   		
+	   	    	int AmountStonesint=Integer.valueOf(AmountStones);
+	   		    if(AmountStonesint<1){logger.error("数据获取第一页 竟然没有一条数据.  请查看错误"); }
+	   		    logger.error("产品列表,数量:"+AmountStonesint);
+	   		   //循环页面的列表数据
+	   	    	for (int i = 2; i < AmountStonesint+2; i++) {
+	   	    		String id="";
+	   	    		if(i<10){id="0"+i;}else{id=i+"";}
+	   	    		String pid=newpagetablehrmldoc.getElementById("ctl00_cphMainContent_gvResults_ctl"+id+"_hidDiamondID").val();//产品id
+	   	    		String file= "ctl00_cphMainContent_gvResults_ctl"+id+"_lblCertFile";//获取页面里的证书访问的路径
+	   	    		String imager=	"ctl00_cphMainContent_gvResults_ctl"+id+"_lblImageFile";//获取页面图片访问的路径
+	   	    		Elements filee=newpagetablehrmldoc.getElementById(file).select("a");
+	   	    		Elements imagere=newpagetablehrmldoc.getElementById(imager).select("a");
+	   	    		if(filee.size()==1&&imagere.size()==1){
+	   	    			String fileeheft=Headerpachong.root+filee.get(0).attr("href");
+	   	    			String imagereheft=Headerpachong.root+imagere.get(0).attr("href");
+	   	    			logger.error(i+"："+pid+"：准备解析的产品文件路径:"+fileeheft);
+	   	    			logger.error(i+"："+pid+"：准备解析的产品图片路径:"+imagereheft);
+	   	    			try {
+	   	    				/**文件地址解析      开始***/
+	   	    		     CloseableHttpResponse   filepes  =client.execute( Headerpachong.newimger(fileeheft));//执行图片真是路径
+						    int filestatuscode = filepes.getStatusLine().getStatusCode();
+						    logger.error(i+"："+pid+"：文件地址解析状态:"+filestatuscode);
+						    String newfileuri="";
+						    if(filestatuscode==302){
+						    	// 读取新的 URL 地址 
+								   Header imgheader=filepes.getFirstHeader("Location");
+								 if(imgheader!=null){
+									 newfileuri=imgheader.getValue();
+								        logger.error(i+"："+pid+"：文件地址解析后:"+newfileuri);
+								 }else{ logger.error(i+"："+pid+"：文件地址空"+imagereheft); }
+						    }else{
+						    	logger.error(i+"："+pid+"：文件解析错误.没有得到地址或302状态"+filestatuscode+":"+imagereheft);
+						    }
+						   // imgerget.abort();  //终止端口
+						    filepes.close();
+							/**文件地址解析     接受***/
+						    
+							/**图片地址解析      开始***/
+	   	    		     CloseableHttpResponse   impes  =client.execute( Headerpachong.newimger(imagereheft));//执行图片真是路径
+						    int imstatuscode = impes.getStatusLine().getStatusCode();
+						    logger.error(i+"："+pid+"：文件地址解析状态:"+filestatuscode);
+						    String newimguri="";
+						    if(imstatuscode==302){
+						    	// 读取新的 URL 地址 
+								   Header imgheader=impes.getFirstHeader("Location");
+								 if(imgheader!=null){
+									 newimguri=imgheader.getValue();
+								        logger.error(i+"："+pid+"：图片地址解析后:"+newimguri);
+								 }else{ logger.error(i+"："+pid+"：图片地址空"+imagereheft); }
+						    }else{
+						    	logger.error(i+"："+pid+"：图片解析错误.没有得到地址或302状态"+imstatuscode+":"+imagereheft);
+						    }
+						   // imgerget.abort();  //终止端口
+						    impes.close();
+							/**文件地址解析      结束***/
+						    
 			  				/***产品详情解析开始****/	
-			  					  String sid= analysis(hrefeobj).get("LotID");
-		 			  			  HttpGet efdget= 	Headerpachong.newExpandFullDetails( efdurl.replaceAll("[%]", sid));
+		 			  			  HttpGet efdget= 	Headerpachong.newExpandFullDetails( Headerpachong.efdurl.replaceAll("[%]", pid));//产品详情url
 		 			  			CloseableHttpResponse edfpes=client.execute(efdget);//
 					  			  String edfpeshrml= EntityUtils.toString(edfpes.getEntity());//
-					  			  edfpeshrml+="<a id='imgurl' heft='"+newuri+"'>";
-				 	  			 logger.error("详细信息状态:"+edfpes.getStatusLine().getStatusCode()+":"+efdurl.replaceAll("[%]", sid));
+					  			  edfpeshrml+="<a id='imgurl' heft='"+newimguri+"'>"+"<a id='flieurl' heft='"+newfileuri+"'>";
+				 	  			 logger.error("详细信息状态:"+edfpes.getStatusLine().getStatusCode()+":"+efdget.getURI().toString());
 				 	  			/***产品详情解析    ent****/	
-				 	  			//当前查询的ctl 是多少  表示属于那个大模块
-				 	  			 String headid=newpagetablehrmldoc.select("head").get(0).attr("id").split("_")[0];
-				 	  			//第几页数据
-				 	  			String pagesun=newpagetablehrmldoc.getElementById(headid+"_cphMainContent_lblPageNumBottom").text();
-				 	  			String filename="d:\\spaga\\"+tableid+"\\"+tdid+"\\"+sid+"\\"+pagesun+".html";
+				 	  			//
+				 	  			String filename="d:\\spaga\\"+tableid+"\\"+tdid+"\\"+pid+"_"+pagesun+".html";
 				 	  			logger.error("产品详情的页面保存路径:"+filename);
 				 	  			 //  printResponse(edfpes);
  				  	  			 Headerpachong.newfile(filename, edfpeshrml);
  				  	  		  // edfpes.close();
 				 	  			// break;
 			  				} catch (Exception e) {
-								logger.error("产品详情和图片解析异常"+hrefeobj);
+								logger.error(i+"："+pid+"：产品详情和图片解析异常");
 								e.printStackTrace();
 							} 
-			  			}
-			  			
+			      
+ 	   	    		}else{
+ 	   	    			logger.error(i+"："+pid+"文件图片不是都存在   开始跳过.");
+	   	    		}
+				}
+	  			  
+	  		 
 			
 //	  			https://member.rapnet.com/RapNet/Search/GetImageFile.aspx?LotID=85912218&FileType=IMAGE
 	  			

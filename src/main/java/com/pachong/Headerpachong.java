@@ -42,16 +42,19 @@ private static String loginurl="https://rapaport.auth0.com/usernamepassword/logi
 //	public static String dataroot="https://member.rapnet.com/RapNet/";
 	
 	/**数据屏和数据列表的    主地址1 https://member.rapnet.com**/
-	public static String root="https://member.rapnet.com";
+	public final static String root="https://member.rapnet.com";
 	
 	/****第一页数据  表格的链接 交易屏 **/
-	public static String pagedata1="https://member.rapnet.com/RapNet/PriceGrid/GridResults.aspx";
+	public final static String pagedata1="https://member.rapnet.com/RapNet/PriceGrid/GridResults.aspx";
 	
 	
 	/****退出登陆 **/
-	public static String logout="https://member.rapnet.com/Login/LogOut.aspx";
+	public final static String logout="https://member.rapnet.com/Login/LogOut.aspx";
 	
 	
+	/***产品详情访问的url  DiamondID=%  是要替换的产品的id**/
+	public final static  String efdurl="https://member.rapnet.com/RapNet/Search/ExpandFullDetails.aspx"
+			+ "?DiamondID=%&Page=1&RowID=0&SearchType=REGULAR&DRows=50&Xtn=-1&newcerts=0";//详情的基本链接 DiamondID的%是要替换成产品信息id
 //	public void init()  
 //    {  
 //         try {  
@@ -256,7 +259,7 @@ private static String loginurl="https://rapaport.auth0.com/usernamepassword/logi
 	 * //			GET /RapNet/Search/GetImageFile.aspx?LotID=85870606&FileType=IMAGE HTTP/1.1
  	 * **/
 	public static HttpGet newimger(String url)  {
-		logger.error("列表中的一个图片的地址解析:"+url);
+		logger.error("列表中的一个图片或文件的地址解析:"+url);
 		   HttpGet getdata=null;
  			getdata = new HttpGet(url);
  		   getdata.addHeader("Host", "member.rapnet.com");
