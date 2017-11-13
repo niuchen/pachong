@@ -200,13 +200,29 @@ public class Apiurl implements Job{
 	  	 
 	  			 
 	  			 /**--------------开始i执行第一页的列表数据的解析存储。 包括 图片文件的接口地址， 产品详细数据-----------****/
-	  			  Document newpagetablehrmldoc = Jsoup.parse(newpagetablehrml); 
-	  			String headid=newpagetablehrmldoc.select("head").get(0).attr("id").split("_")[0];//获取head的内容当前查询的ctl 是多少  表示属于那个大模块  head表情的id有一个
-	   		 	String pagesun=newpagetablehrmldoc.getElementById(headid+"_cphMainContent_lblPageNumBottom").text();//第几页数据
-	  		 	String AmountStones=newpagetablehrmldoc.getElementById(headid+"_cphMainContent_SummaryResults1_lblAmountStones").text();//这一页有几条数据
-	   		 	String PageCoun=newpagetablehrmldoc.getElementById(headid+"_cphMainContent_lblPageCount").text();//总共有几页   如果是空证明就一页
-	   		 
-	   		
+	  		   Document newpagetablehrmldoc = Jsoup.parse(newpagetablehrml); 
+				String headid=newpagetablehrmldoc.select("head").get(0).attr("id").split("_")[0];//获取head的内容当前查询的ctl 是多少  表示属于那个大模块  head表情的id有一个
+  	  		    String PageCoun=newpagetablehrmldoc.getElementById(headid+"_cphMainContent_lblPageCount").text();//总共有几页   如果是空证明就一页
+  	  		 	Integer pagecount=0;
+  	  		    String pagesun=newpagetablehrmldoc.getElementById(headid+"_cphMainContent_lblPageNumBottom").text();//第几页数据
+  	  		 	if(PageCoun==null||"".equals(PageCoun)){
+  	  		 	  pagecount=0;
+  	  		 	}else{
+  	  		 		pagecount=Integer.valueOf(PageCoun);
+  	  		 		if(pagecount>5){
+  	  		 		  pagecount=5;  //值读取分页5页内的数据.
+  	  		 		}
+  	  		 	}
+  	  		 	//这个是第一页的数据 不用再次读取了. 
+	  			 Headerpachong.OutputPage(tableid, tdid, newpagetablehrmldoc, client);
+ 	  		
+ 	 		
+//	  			String headid=newpagetablehrmldoc.select("head").get(0).attr("id").split("_")[0];//获取head的内容当前查询的ctl 是多少  表示属于那个大模块  head表情的id有一个
+//	   		 	String pagesun=newpagetablehrmldoc.getElementById(headid+"_cphMainContent_lblPageNumBottom").text();//第几页数据
+//	  		 	String AmountStones=newpagetablehrmldoc.getElementById(headid+"_cphMainContent_SummaryResults1_lblAmountStones").text();//这一页有几条数据
+//	   		 	String PageCoun=newpagetablehrmldoc.getElementById(headid+"_cphMainContent_lblPageCount").text();//总共有几页   如果是空证明就一页
+//	   		 
+//	   		
 //	   	    	int AmountStonesint=Integer.valueOf(AmountStones);
 //	   		    if(AmountStonesint<1){logger.error("数据获取第一页 竟然没有一条数据.  请查看错误"); }
 //	   		    logger.error("产品列表,数量:"+AmountStonesint);
@@ -289,10 +305,7 @@ public class Apiurl implements Job{
 	  			  
 	  		 
 			
-//	  			https://member.rapnet.com/RapNet/Search/GetImageFile.aspx?LotID=85912218&FileType=IMAGE
-	  			
-	//  			https://member.rapnet.com/RapNet/Search/ExpandFullDetails.aspx?DiamondID=85912218&Page=1&RowID=1&SearchType=REGULAR&DRows=50&Xtn=-1&newcerts=0
-//	  			 
+ 		 
  	    	 /**----------- 执行 数据列表   翻页     starte-------------***/ 
 	  			logger.error("翻页开始");
 	  		    HttpPost newTurnthepage=Headerpachong.newTurnthepage(newpagetablehrml, tuchuurl);

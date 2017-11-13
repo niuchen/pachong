@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.UnsupportedEncodingException;
+import java.util.Iterator;
 
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -13,12 +14,13 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class Test {
 
 	public static void main(String[] args) {
-		File f =new File("d:\\s4.html");
+		File f =new File("D:\\spaga\\ctl00_cphMainContent_repGrids_ctl00_gvGrid\\ctl00_cphMainContent_repGrids_ctl00_gvGrid_ctl02_lnk_IF_Value\\85870615\\1.html");
 		System.out.println(f.toString());
 		FileReader reader;String str="";
 		try {
@@ -39,14 +41,27 @@ public class Test {
 		}//定义一个fileReader对象，用来初始化BufferedReader
 		String id="02";
 		 Document newpagetablehrmldoc = Jsoup.parse(str); 
-		 String pid=newpagetablehrmldoc.getElementById("ctl00_cphMainContent_gvResults_ctl"+id+"_hidDiamondID").val();//产品id
-		 System.out.println(pid);
-    		String file= "ctl00_cphMainContent_gvResults_ctl"+id+"_lblCertFile";//获取页面里的证书访问的路径
-    		String imager=	"ctl00_cphMainContent_gvResults_ctl"+id+"_lblImageFile";//获取页面图片访问的路径
-    		Elements filee=newpagetablehrmldoc.getElementById(file).select("a");
-    		Elements imagere=newpagetablehrmldoc.getElementById(imager).select("a");
-    		 System.out.println(newpagetablehrmldoc.getElementById(file).select("a").get(0).attr("heft"));
-    		 System.out.println(newpagetablehrmldoc.getElementById(imager));
+		// String pid=newpagetablehrmldoc.getElementById("ctl00_cphMainContent_gvResults_ctl"+id+"_hidDiamondID").val();//产品id
+		// System.out.println(pid);
+//    		String file= "ctl00_cphMainContent_gvResults_ctl"+id+"_lblCertFile";//获取页面里的证书访问的路径
+//    		String imager=	"ctl00_cphMainContent_gvResults_ctl"+id+"_lblImageFile";//获取页面图片访问的路径
+//    		Elements filee=newpagetablehrmldoc.getElementById(file).select("a");
+//    		Elements imagere=newpagetablehrmldoc.getElementById(imager).select("a");
+//    		 System.out.println(newpagetablehrmldoc.getElementById(file).select("a").get(0).attr("heft"));
+//    		 System.out.println(newpagetablehrmldoc.getElementById(imager));
+		Elements es= newpagetablehrmldoc.select("td[class*=CellValue]");
+			String toptitle[]=new String []{
+					"形状","报告日期","尺寸","测量","颜色","底面","净度","腰围","切口","顶点",
+					"抛光","展位","对称","处理","荧光","标题","深度 %","比率","表 %","星型刻面长",
+					"Report Shape","认证评论","主要特征","Lot #","可用性","区域位置","Escrow","一个图片","评级通过特定","图片"
+					,"联系方式信息","品牌","Shade","Lab location","已更新时间","Inclusions","会员评论"};
+System.out.println(es.size());
+		int i=0;
+		for(Element e:es){
+			 System.out.println(i+":"+toptitle[i]+":"+e.html());
+			 i++;
+		}
+		
 		if(1==1)return;
 		// TODO Auto-generated method stub
 		String url="https://member.rapnet.com/RapNet/Search/GetImageFile.aspx?LotID=83097553&FileType=IMAGE";
