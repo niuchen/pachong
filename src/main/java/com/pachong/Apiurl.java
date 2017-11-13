@@ -195,7 +195,7 @@ public class Apiurl implements Job{
 	  			 logger.error("访问交易屏中  表格的某个单元格  读取单元格列表状态:"+pingdatapageresponse.getStatusLine().getStatusCode() );
 	  			 String newpagetablehrml= EntityUtils.toString(pingdatapageresponse.getEntity());//得到paga注册code 和注册url
 	  		//	pingdatapageresponse.close();
-	  			 Headerpachong.newfile("d:\\s3.html", newpagetablehrml);
+	  			// Headerpachong.newfile("d:\\s3.html", newpagetablehrml);
 		    	 /**-----------访问 交易屏  某一个交易单元格   打开数据列表   ent-------------***/ 
 	  	 
 	  			 
@@ -456,6 +456,7 @@ public class Apiurl implements Job{
 	            throws ParseException, IOException {
 	        // 获取响应消息实体
 	        HttpEntity entity = httpResponse.getEntity();
+	      
 	        // 响应状态
 	       logger.error("status:" + httpResponse.getStatusLine());
 	       logger.error("headers:");

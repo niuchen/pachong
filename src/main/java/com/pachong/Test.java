@@ -3,8 +3,13 @@ package com.pachong;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.Iterator;
 
 import org.apache.http.Header;
@@ -17,10 +22,13 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import au.com.bytecode.opencsv.CSVWriter;
+
 public class Test {
 
 	public static void main(String[] args) {
-		File f =new File("D:\\spaga\\ctl00_cphMainContent_repGrids_ctl00_gvGrid\\ctl00_cphMainContent_repGrids_ctl00_gvGrid_ctl02_lnk_IF_Value\\85870615\\1.html");
+  
+ 		File f =new File("D:\\spaga\\ctl00_cphMainContent_repGrids_ctl00_gvGrid\\ctl00_cphMainContent_repGrids_ctl00_gvGrid_ctl02_lnk_IF_Value\\70657026_1.html");
 		System.out.println(f.toString());
 		FileReader reader;String str="";
 		try {
@@ -55,10 +63,13 @@ public class Test {
 					"抛光","展位","对称","处理","荧光","标题","深度 %","比率","表 %","星型刻面长",
 					"Report Shape","认证评论","主要特征","Lot #","可用性","区域位置","Escrow","一个图片","评级通过特定","图片"
 					,"联系方式信息","品牌","Shade","Lab location","已更新时间","Inclusions","会员评论"};
+			
+			
+		 
 System.out.println(es.size());
 		int i=0;
 		for(Element e:es){
-			 System.out.println(i+":"+toptitle[i]+":"+e.html());
+			 System.out.println(i+":"+toptitle[i]+":"+e.text());
 			 i++;
 		}
 		

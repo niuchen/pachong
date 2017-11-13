@@ -1,9 +1,12 @@
 package com.pachong;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -267,7 +270,7 @@ private static String loginurl="https://rapaport.auth0.com/usernamepassword/logi
 	 * //			GET /RapNet/Search/GetImageFile.aspx?LotID=85870606&FileType=IMAGE HTTP/1.1
  	 * **/
 	public static HttpGet newimger(String url)  {
-		logger.error("列表中的一个图片或文件的地址解析:"+url);
+		//logger.error("列表中的一个图片或文件的地址解析:"+url);
 		   HttpGet getdata=null;
  			getdata = new HttpGet(url);
  		   getdata.addHeader("Host", "member.rapnet.com");
@@ -453,8 +456,8 @@ private static String loginurl="https://rapaport.auth0.com/usernamepassword/logi
  						"产品大表","产品大表单元格","产品id","产品图片路径","产品证书路径","产品第几页数据",
  						"形状","报告日期","尺寸","测量","颜色","底面","净度","腰围","切口","顶点",
  						"抛光","展位","对称","处理","荧光","标题","深度 %","比率","表 %","星型刻面长",
- 						"Report Shape","认证评论","主要特征","Lot #","可用性","区域位置","Escrow","一个图片","评级通过特定","图片"
- 						,"联系方式信息","品牌","Shade","Lab location","已更新时间","Inclusions","会员评论"};
+ 						"Report Shape","认证评论","主要特征","Lot #","可用性","区域位置","Escrow","厂商","评级通过特定","图片"
+ 						,"联系方式信息","品牌","Shade","Lab location","已更新时间","Inclusions","会员评论","$/Ct","%/Rap","$Total" };
  				allLines.add(toptitle);
  		   //循环页面的列表数据
  	    	for (int i = 2; i < AmountStonesint+2; i++) {//列表里的数据是02开始
@@ -468,48 +471,63 @@ private static String loginurl="https://rapaport.auth0.com/usernamepassword/logi
  	    		if(filee.size()==1&&imagere.size()==1){
  	    			String fileeheft=Headerpachong.root+filee.get(0).attr("href");
  	    			String imagereheft=Headerpachong.root+imagere.get(0).attr("href");
- 	    			logger.error(i+"："+pid+"：准备解析的产品文件路径:"+fileeheft);
- 	    			logger.error(i+"："+pid+"：准备解析的产品图片路径:"+imagereheft);
+ 	    			
+ 	    			
  	    			try {
  	    				/**文件地址解析      开始***/
  	    		     CloseableHttpResponse   filepes  =client.execute( Headerpachong.newimger(fileeheft));//执行图片真是路径
 					    int filestatuscode = filepes.getStatusLine().getStatusCode();
+					    logger.error(i+"："+pid+"：准备解析的产品文件路径:"+fileeheft);
 					    logger.error(i+"："+pid+"：文件地址解析状态:"+filestatuscode);
 					    String newfileuri="";//存储文件地址
 					    String newimguri="";//存储图片地址
-					    if(filestatuscode==302||filestatuscode==209){
+					  //  if(filestatuscode==302||filestatuscode==209){
 					    	// 读取新的 URL 地址 
-							   Header imgheader=filepes.getFirstHeader("Location");
-							 if(imgheader!=null){
-								 newfileuri=imgheader.getValue();
-							        logger.error(i+"："+pid+"：文件地址解析后:"+newfileuri);
-							 }else{ logger.error(i+"："+pid+"：文件地址空"+imagereheft); }
-					    }else{
-					    	logger.error(i+"："+pid+"：文件解析错误.没有得到地址或302状态"+filestatuscode+":"+imagereheft);
-					    }
+							   Header imgheader1=filepes.getFirstHeader("Location");
+							//  System.out.println("实体:"+EntityUtils.toString(filepes.getEntity()));
+							 if(imgheader1!=null){
+								 newfileuri=imgheader1.getValue();
+							       
+							 }else{
+ 					  			  String filepeshrml= EntityUtils.toString(filepes.getEntity());//
+					  			 Document filepespeshrmldoc = Jsoup.parse(filepeshrml); 
+					  			 String src= filepespeshrmldoc.getElementById("IframePdf").attr("src");
+					  			  if(src==null||"".equals(src)){
+					  				  logger.error(i+"："+pid+"：文件地址空请留意!!!!!:"+newfileuri); 
+					  			  }else{
+					  				 newfileuri =src;
+					  			  }
+ 							 }
+							 logger.error(i+"："+pid+"：文件地址解析后:"+newfileuri);
+							 
+							 
+					   // }else{
+					    //	logger.error(i+"："+pid+"：文件解析错误.没有得到地址或302状态"+filestatuscode+":"+imagereheft);
+					  //  }
 					   // imgerget.abort();  //终止端口
-					   if(filestatuscode==302){
-					    filepes.close();
-					   }
+					 //  if(filestatuscode==302){ filepes.close(); }
+					   filepes.close(); 
 						/**文件地址解析     接受***/
 					    
 						/**图片地址解析      开始***/
  	    		     CloseableHttpResponse   impes  =client.execute( Headerpachong.newimger(imagereheft));//执行图片真是路径
 					    int imstatuscode = impes.getStatusLine().getStatusCode();
+					    logger.error(i+"："+pid+"：准备解析的产品图片路径:"+imagereheft);
 					    logger.error(i+"："+pid+"：图片地址解析状态:"+filestatuscode);
 					    
-					    if(imstatuscode==302||imstatuscode==209){
+					  //  if(imstatuscode==302||imstatuscode==209){
 					    	// 读取新的 URL 地址 
-							   Header imgheader=impes.getFirstHeader("Location");
-							 if(imgheader!=null){
-								 newimguri=imgheader.getValue();   logger.error(i+"："+pid+"：图片地址解析后:"+newimguri);
+							   Header imgheader2=impes.getFirstHeader("Location");
+							//   System.out.println("实体:"+EntityUtils.toString(impes.getEntity()));
+							 if(imgheader2!=null){
+								 newimguri=imgheader2.getValue();   logger.error(i+"："+pid+"：图片地址解析后:"+newimguri);
 							 }else{ logger.error(i+"："+pid+"：图片地址空"+imagereheft); }
-					    }else{
-					    	logger.error(i+"："+pid+"：图片解析错误.没有得到地址或302状态"+imstatuscode+":"+imagereheft);
-					    }
+					  //  }else{
+					    //	logger.error(i+"："+pid+"：图片解析错误.没有得到地址或302,状态:"+imstatuscode+":"+imagereheft);
+					 //   }
 					   // imgerget.abort();  //终止端口
-					    if(imstatuscode==302){ impes.close();}
-					   
+					    //if(imstatuscode==302){ impes.close();}
+					    impes.close();
 						/**文件地址解析      结束***/
 					    
 		  				/***产品详情解析开始****/	
@@ -520,13 +538,12 @@ private static String loginurl="https://rapaport.auth0.com/usernamepassword/logi
 			 	  			 logger.error("详细信息状态:"+edfpes.getStatusLine().getStatusCode()+":"+efdget.getURI().toString());
 			 	  			/***产品详情解析    ent****/	
 			 	  			//
-			 	  		
+			 	  		//newfile(filename+"d", edfpeshrml);
 			 	  			logger.error("产品详情的页面保存路径:"+filename);
-			 	  			
-			 	  			Document edfpeshrmldoc=new Document(edfpeshrml);
+			 	  		    Document edfpeshrmldoc = Jsoup.parse(edfpeshrml); 
+			 	  		 
  			 	  			Elements es= edfpeshrmldoc.select("td[class*=CellValue]");
-			 
-			 			
+ 			 			   
 			 				String data[]=new String [toptitle.length];
 		 					 data[0]=tableid;
 		 					 data[1]=tdid;
@@ -534,26 +551,44 @@ private static String loginurl="https://rapaport.auth0.com/usernamepassword/logi
 		 					 data[3]=newimguri;
 		 					 data[4]=newfileuri;
 		 					 data[5]=pagesun;
-			 				for (int j = 6 ;j < es.size(); j++) {//序号添加详情页面的数据指标输出
+		 					Elements es$= edfpeshrmldoc.select("td[class=MelbourneRegularSmallHeader]");	//这个是价格的信息
+		 				//	es.add(es$.get(0));
+		 					//es.add(es$.get(1));
+		 				//	es.add(es$.get(2));
+		 					 System.out.println("找到的CellValue样式数:"+es.size()+"  表头数据数:"+toptitle.length);
+			 				for (int j = 0 ;j < toptitle.length-9; j++) {//序号添加详情页面的数据指标输出  -6是因为data0-5已经写死输出过了. 在多循环就会超过data大小
+			 					//1sagar en 2a sagar 3sambhav 详细信息有的还有好几个table es的size会有好多. 但是第一个table应该是40个  如果变化了 也可能会错误.
 			 					Element element=es.get(j);
-			 					 data[j]=element.html();
+			 					 data[j+6]=element.text().replaceAll(",", "'");
  							}
+			 				 data[toptitle.length-3]=es$.get(0).text().replaceAll(",", "'");
+			 				 data[toptitle.length-2]=es$.get(1).text().replaceAll(",", "'");
+			 				 data[toptitle.length-1]=es$.get(2).text().replaceAll(",", "'");
+			 				for(String s: data) {
+			 				   System.out.print(s+",");
+			 				  }
 			 				allLines.add(data);
  			 	  			 //  printResponse(edfpes);
 			  	  			// Headerpachong.newfile(filename, edfpeshrml);
 			  	  		  // edfpes.close();
 			 	  			// break;
+			 				edfpes.close();
+			 				logger.error("---------------");
+			 				logger.error("---------------");
+			 				 
 		  				} catch (Exception e) {
-							logger.error(i+"："+pid+"：产品详情和图片解析异常");
-							e.printStackTrace();
-						} 
+		  					e.printStackTrace();
+							logger.error(i+"："+pid+"：产品详情和图片解析异常"+e);
+							
+ 							return;
+ 						} 
 		      
   	    		}else{
   	    			logger.error(i+"："+pid+"文件图片不是都存在   开始跳过.");
  	    		}
 			}
  	    	csv.writeAll(allLines);
- 	    	
+ 	   
  	    	try {
  	    		csv.flush();
 				csv.close();
@@ -564,7 +599,7 @@ private static String loginurl="https://rapaport.auth0.com/usernamepassword/logi
 	} 
 	/**输出html文件  path存储路径和文件名称  html是输出内容**/
 	public static CSVWriter uopnewcsv(String path){
-		CSVWriter csv =null;
+		CSVWriter csv =null;	OutputStreamWriter fileWriter2=null;
 		 try {
 			 File file = new File(path);  
 			    System.out.println(file.getParentFile());  
@@ -575,9 +610,10 @@ private static String loginurl="https://rapaport.auth0.com/usernamepassword/logi
 			        }  
 			    }  
 			    
-			  File f2=new File(path);
-			  FileWriter  fileWriter2 = new FileWriter(f2);  
-			  csv=new CSVWriter(fileWriter2);
+ 				fileWriter2 = new OutputStreamWriter(new FileOutputStream(file), Charset.forName("GBK"));
+
+			  csv=new CSVWriter(fileWriter2, CSVWriter.DEFAULT_SEPARATOR,  
+	                    CSVWriter.NO_QUOTE_CHARACTER);
 			  return csv;
 			//  csv.writeAll(allLines);
 	 
