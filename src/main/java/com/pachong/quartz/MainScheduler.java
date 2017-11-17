@@ -15,7 +15,7 @@ import org.quartz.impl.StdSchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.pachong.Apiurl;
+import com.pachong.ApiurlMain;
  
 
 /**
@@ -52,7 +52,7 @@ public class MainScheduler {
         //  job.setCronExpression("0/15 * * * * ?");//15秒执行一次
          job.setCronExpression(" 0 0 0 * * ? ");//晚上0点执行
         job.setDesc("采集-定时器");
-        job.setObjclass(Apiurl.class);
+        job.setObjclass(ApiurlMain.class);
         
         Scheduler scheduler = getScheduler();
     	//创建任务触发方案分组key

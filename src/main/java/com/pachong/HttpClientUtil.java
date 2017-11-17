@@ -21,6 +21,8 @@ import java.util.Map;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HeaderIterator;
@@ -54,6 +56,7 @@ import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClients;  
   
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -78,7 +81,7 @@ public class HttpClientUtil {
     private static String EMPTY_STR = "";  
     private static String UTF_8 = "UTF-8";  
     private HttpClientUtil() {}
-    
+    public static Log logger = LogFactory.getLog(HttpClientUtil.class);  //日志	
     private static void init() {  
    
 			try {
@@ -86,8 +89,7 @@ public class HttpClientUtil {
 			           // cm = new PoolingHttpClientConnectionManager();  
 				          SSLContext sslcontext;
 				sslcontext = SSLContexts.custom().loadTrustMaterial(null,  
-				  new TrustSelfSignedStrategy())  
-  .build();
+				  new TrustSelfSignedStrategy()) .build();
 				HostnameVerifier hostnameVerifier = SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;  
 				SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(  
 				  sslcontext,hostnameVerifier);  
@@ -95,9 +97,8 @@ public class HttpClientUtil {
 				  .register("http", PlainConnectionSocketFactory.getSocketFactory())  
 				  .register("https", sslsf)  
 				  .build();  
-				cm = new PoolingHttpClientConnectionManager(socketFactoryRegistry);  
-			 
-			            cm.setMaxTotal(50);// 整个连接池最大连接数  
+						cm = new PoolingHttpClientConnectionManager(socketFactoryRegistry);  
+ 			            cm.setMaxTotal(100);// 整个连接池最大连接数  
 			            cm.setDefaultMaxPerRoute(5);// 每路由最大连接数，默认值是2 
 			     }  
 			} catch (KeyManagementException e) {
@@ -124,13 +125,60 @@ public class HttpClientUtil {
     	RequestConfig requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD_STRICT)//标准Cookie策略
          		.setRedirectsEnabled(false)
          		   //与服务器连接超时时间：httpclient会创建一个异步线程用以创建socket连接，此处设置该socket的连接超时时间  
-                //    .setConnectTimeout(100000)  
-                //  .setSocketTimeout(100000)
-                    .build();
-        return HttpClients.custom().setDefaultRequestConfig(requestConfig).setConnectionManager(cm).build();  
+                 .setConnectTimeout(200000)  
+                  .setSocketTimeout(200000)
+                      .build();
+        return HttpClients.custom().setDefaultRequestConfig(requestConfig).setConnectionManager(cm)
+        		 .setRetryHandler(new DefaultHttpRequestRetryHandler())  //默认失败后重发3次，可用别的
+        		.build() ;  
     }  
   
+    
+    public static CloseableHttpResponse httpGetRequest(CloseableHttpClient httpclient,HttpGet httpget) {  
+    	int i = 0;
+    	  while (true) {
+    	        CloseableHttpResponse response =null;
+    	        try{
+    	           response = httpclient.execute(httpget);
+    	        }catch(Exception e){
+    	            if(i>3){
+    	            	logger.error(httpget.getURI().toString()+" 链接异常,重拾链接第"+i+"次:依然失败,返回null");
+    	            	 return null;    
+    	            }
+     	            logger.error(httpget.getURI().toString()+" 链接异常,重拾链接第"+i+"次:"+e);
+    	            i++;
+    	        }
+    	       if (response!= null ) {
+    	    	   return response;  
+    	       }
+    	  }
+      
+    }  
+    
+    public static CloseableHttpResponse httpPostRequest(CloseableHttpClient httpclient,HttpPost httpPost) {  
+    	int i = 0;
+    	  while (true) {
+    		  CloseableHttpResponse response =null;
+    	        try{
+    	           response = httpclient.execute(httpPost);
+    	        }catch(Exception e){
+    	            if(i>3){
+    	            	logger.error(httpPost.getURI().getPath()+" 链接异常,重拾链接第"+i+"次:依然失败,返回null");
+    	            	 return null;  
+    	            }
+    	            logger.error(httpPost.getURI().getPath()+" 链接异常,重拾链接第"+i+"次:"+e);
+    	            i++;
+    	        }
+    	       if (response!= null ) {
+    	    	   
+     	           return response;  
+    	       }
+    	  }
+       
+    }  
     /** 
+     * 
+     * 
      *  
      * @param url 
      * @return 

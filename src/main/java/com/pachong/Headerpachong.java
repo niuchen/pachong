@@ -343,7 +343,7 @@ private static String loginurl="https://rapaport.auth0.com/usernamepassword/logi
 	 * html上个页面的html  数据列表页面
 	 * Referer是上个页面的地址
  	 * **/
-	public static HttpPost newTurnthepage(String html,String Referer) throws UnsupportedEncodingException  {
+	public static HttpPost newTurnthepage(String html,String Referer,int paga) throws UnsupportedEncodingException  {
 		 Document newpagetabled = Jsoup.parse(html); 
 		String action= newpagetabled.getElementById("aspnetForm").attr("action");//得到提交form 的地址
 		action=action.split("\\."+"/")[1];//地址里有./ 要截取掉  然后拼接根目录 成为完整目录
@@ -369,14 +369,14 @@ private static String loginurl="https://rapaport.auth0.com/usernamepassword/logi
 	    	param2.add(new BasicNameValuePair("TopSearchBox",""));
 	    	param2.add(new BasicNameValuePair("__ASYNCPOST","true"));
 	    	param2.add(new BasicNameValuePair("__EVENTARGUMENT",""));
-	    	param2.add(new BasicNameValuePair("__EVENTTARGET","ctl00$cphMainContent$lbntNavigate5"));
+	    	param2.add(new BasicNameValuePair("__EVENTTARGET","ctl00$cphMainContent$lbntNavigate"+paga));
 	    	param2.add(new BasicNameValuePair("__EVENTVALIDATION",newpagetabled.getElementById("__EVENTVALIDATION").attr("value")));
  	    	param2.add(new BasicNameValuePair("__COMPRESSEDVIEWSTATE",newpagetabled.getElementById("__COMPRESSEDVIEWSTATE").attr("value")));
      
   
 	    	param2.add(new BasicNameValuePair("__VIEWSTATE", ""));
 	    	param2.add(new BasicNameValuePair("__VIEWSTATEENCRYPTED", ""));
-	    	param2.add(new BasicNameValuePair("ctl00$ScriptManager1", "ctl00$cphMainContent$udpMain|ctl00$cphMainContent$lbntNavigate5"));
+	    	param2.add(new BasicNameValuePair("ctl00$ScriptManager1", "ctl00$cphMainContent$udpMain|ctl00$cphMainContent$lbntNavigate"+paga));
  	    	param2.add(new BasicNameValuePair("ctl00$antiforgery", newpagetabled.getElementById("ctl00_antiforgery").attr("value")));
  	    	  param2.add(new BasicNameValuePair("ctl00$cphMainContent$hfSelectedDiaomnds", ""));
  	    	  param2.add(new BasicNameValuePair("ctl00$cphMainContent$hidCurrentStartRow", ""));
@@ -441,15 +441,22 @@ private static String loginurl="https://rapaport.auth0.com/usernamepassword/logi
 	 * cilent  链接
 	 * ****/
 	public static void OutputPage(String tableid,String tdid ,Document newpagetablehrmldoc,CloseableHttpClient client){
-			String headid=newpagetablehrmldoc.select("head").get(0).attr("id").split("_")[0];//获取head的内容当前查询的ctl 是多少  表示属于那个大模块  head表情的id有一个
-  		 	String pagesun=newpagetablehrmldoc.getElementById(headid+"_cphMainContent_lblPageNumBottom").text();//第几页数据
-		 	String AmountStones=newpagetablehrmldoc.getElementById(headid+"_cphMainContent_SummaryResults1_lblAmountStones").text();//这一页有几条数据
- 		 
+		//	String headid=newpagetablehrmldoc.select("head").get(0).attr("id").split("_")[0];//获取head的内容当前查询的ctl 是多少  表示属于那个大模块  head表情的id有一个
+			String headid="ctl00";
+			String pagesun="0";
+	  		 	if(newpagetablehrmldoc.getElementById(headid+"_cphMainContent_lblPageNumBottom")!=null){
+			  pagesun=newpagetablehrmldoc.getElementById(headid+"_cphMainContent_lblPageNumBottom").text();//第几页数据
+	  		 	}
+	  		 	String AmountStones="0";
+	  		 	if(newpagetablehrmldoc.getElementById(headid+"_cphMainContent_SummaryResults1_lblAmountStones")!=null){
+	  		 		AmountStones=newpagetablehrmldoc.getElementById(headid+"_cphMainContent_SummaryResults1_lblAmountStones").text();//这一页有几条数据
+	  		 	}
  	    	int AmountStonesint=Integer.valueOf(AmountStones);
  		    if(AmountStonesint<1){logger.error("数据获取第一页 竟然没有一条数据.  请查看错误"); }
  		    logger.error("产品列表,数量:"+AmountStonesint);
  		    
  			String filename="d:\\spaga\\"+tableid+"\\"+tdid+"\\"+pagesun+".csv";
+ 			 
 				CSVWriter csv=uopnewcsv(filename);
 	  			ArrayList<String[]> allLines=new ArrayList<String[]>();
  				String toptitle[]=new String []{
@@ -459,8 +466,9 @@ private static String loginurl="https://rapaport.auth0.com/usernamepassword/logi
  						"Report Shape","认证评论","主要特征","Lot #","可用性","区域位置","Escrow","厂商","评级通过特定","图片"
  						,"联系方式信息","品牌","Shade","Lab location","已更新时间","Inclusions","会员评论","$/Ct","%/Rap","$Total" };
  				allLines.add(toptitle);
+ 				logger.error("开始导出一个页的全部数据:"+filename+":");
  		   //循环页面的列表数据
- 	    	for (int i = 2; i < AmountStonesint+2; i++) {//列表里的数据是02开始
+ 	    	for (int i = 2; i < AmountStonesint+2; i++) {//列表里的数据是02开始的
  	    		String id="";
  	    		if(i<10){id="0"+i;}else{id=i+"";}
  	    		String pid=newpagetablehrmldoc.getElementById("ctl00_cphMainContent_gvResults_ctl"+id+"_hidDiamondID").val();//产品id
@@ -469,118 +477,124 @@ private static String loginurl="https://rapaport.auth0.com/usernamepassword/logi
  	    		Elements filee=newpagetablehrmldoc.getElementById(file).select("a");
  	    		Elements imagere=newpagetablehrmldoc.getElementById(imager).select("a");
  	    		if(filee.size()==1&&imagere.size()==1){
+  	    			 
  	    			String fileeheft=Headerpachong.root+filee.get(0).attr("href");
  	    			String imagereheft=Headerpachong.root+imagere.get(0).attr("href");
- 	    			
- 	    			
+ 	    		    String newfileuri="";//存储文件地址
+				    String newimguri="";//存储图片地址
  	    			try {
  	    				/**文件地址解析      开始***/
- 	    		     CloseableHttpResponse   filepes  =client.execute( Headerpachong.newimger(fileeheft));//执行图片真是路径
-					    int filestatuscode = filepes.getStatusLine().getStatusCode();
-					    logger.error(i+"："+pid+"：准备解析的产品文件路径:"+fileeheft);
-					    logger.error(i+"："+pid+"：文件地址解析状态:"+filestatuscode);
-					    String newfileuri="";//存储文件地址
-					    String newimguri="";//存储图片地址
-					  //  if(filestatuscode==302||filestatuscode==209){
-					    	// 读取新的 URL 地址 
+ 	    		   //  CloseableHttpResponse   filepes  =client.execute( Headerpachong.newimger(fileeheft));//执行图片真是路径
+ 	    			 CloseableHttpResponse filepes= HttpClientUtil.httpGetRequest(client, Headerpachong.newimger(fileeheft)) ;
+	 	   	         if(filepes==null){
+	 	   	        	// throw new Exception("CloseableHttpResponse 多次链接失败.空");
+	 	   	             logger.error(i+"："+pid+"：文件多次链接失败.空跳过:"+fileeheft);
+	 	   	         }else{
+ 	    		     int filestatuscode = filepes.getStatusLine().getStatusCode();
+					    logger.error(filename+""+i+"："+pid+"：文件地址解析状态:"+filestatuscode+"：准备解析的产品文件路径:"+fileeheft);
+  					    	// 读取新的 URL 地址 
 							   Header imgheader1=filepes.getFirstHeader("Location");
 							//  System.out.println("实体:"+EntityUtils.toString(filepes.getEntity()));
 							 if(imgheader1!=null){
 								 newfileuri=imgheader1.getValue();
-							       
-							 }else{
+ 							 }else{
  					  			  String filepeshrml= EntityUtils.toString(filepes.getEntity());//
 					  			 Document filepespeshrmldoc = Jsoup.parse(filepeshrml); 
-					  			 String src= filepespeshrmldoc.getElementById("IframePdf").attr("src");
-					  			  if(src==null||"".equals(src)){
-					  				  logger.error(i+"："+pid+"：文件地址空请留意!!!!!:"+newfileuri); 
-					  			  }else{
-					  				 newfileuri =src;
-					  			  }
+					  			 if(filepespeshrmldoc.getElementById("IframePdf")==null){
+					  				newfileuri="无法分析出pdf的地址."+fileeheft+":对方服务器给出的错误的html:";
+ 					  			 }else{
+						  			 String src= filepespeshrmldoc.getElementById("IframePdf").attr("src");
+	 					  			  if(src==null||"".equals(src)){
+						  				  logger.error(i+"："+pid+"：文件地址空请留意!!!!!:"+newfileuri); 
+						  			  }else{
+						  				 newfileuri =src;
+						  			  }
+					  			 }
  							 }
 							 logger.error(i+"："+pid+"：文件地址解析后:"+newfileuri);
-							 
-							 
-					   // }else{
-					    //	logger.error(i+"："+pid+"：文件解析错误.没有得到地址或302状态"+filestatuscode+":"+imagereheft);
-					  //  }
-					   // imgerget.abort();  //终止端口
-					 //  if(filestatuscode==302){ filepes.close(); }
+	 	   	            }
+		 
 					   filepes.close(); 
 						/**文件地址解析     接受***/
 					    
 						/**图片地址解析      开始***/
- 	    		     CloseableHttpResponse   impes  =client.execute( Headerpachong.newimger(imagereheft));//执行图片真是路径
-					    int imstatuscode = impes.getStatusLine().getStatusCode();
-					    logger.error(i+"："+pid+"：准备解析的产品图片路径:"+imagereheft);
-					    logger.error(i+"："+pid+"：图片地址解析状态:"+filestatuscode);
-					    
-					  //  if(imstatuscode==302||imstatuscode==209){
-					    	// 读取新的 URL 地址 
-							   Header imgheader2=impes.getFirstHeader("Location");
-							//   System.out.println("实体:"+EntityUtils.toString(impes.getEntity()));
-							 if(imgheader2!=null){
-								 newimguri=imgheader2.getValue();   logger.error(i+"："+pid+"：图片地址解析后:"+newimguri);
-							 }else{ logger.error(i+"："+pid+"：图片地址空"+imagereheft); }
-					  //  }else{
-					    //	logger.error(i+"："+pid+"：图片解析错误.没有得到地址或302,状态:"+imstatuscode+":"+imagereheft);
-					 //   }
-					   // imgerget.abort();  //终止端口
-					    //if(imstatuscode==302){ impes.close();}
+ 	    		//     CloseableHttpResponse   impes  =client.execute( Headerpachong.newimger(imagereheft));//执行图片真是路径
+ 	    		    CloseableHttpResponse impes= HttpClientUtil.httpGetRequest(client, Headerpachong.newimger(imagereheft)) ;
+	 	   	         if(impes==null){
+	 	   	        	// throw new Exception("CloseableHttpResponse 多次链接失败.空");
+	 	   	         logger.error(i+"："+pid+"：图片多次链接失败.空跳过:"+imagereheft);
+	 	   	         }else{
+		 	   	         int imstatuscode = impes.getStatusLine().getStatusCode();
+						    logger.error(i+"："+pid+"：图片地址解析状态:"+imstatuscode+"：准备解析的产品图片路径:"+imagereheft);
+  						    	// 读取新的 URL 地址 
+								   Header imgheader2=impes.getFirstHeader("Location");
+ 								 if(imgheader2!=null){
+									 newimguri=imgheader2.getValue();  
+									 logger.error(i+"："+pid+"：图片地址解析后:"+newimguri);
+								 }else{ logger.error(i+"："+pid+"：图片地址空"+imagereheft); }
+				 
 					    impes.close();
+	 	   	         }
+ 	    		     
+ 	    		
 						/**文件地址解析      结束***/
 					    
 		  				/***产品详情解析开始****/	
-	 			  			  HttpGet efdget= 	Headerpachong.newExpandFullDetails( Headerpachong.efdurl.replaceAll("[%]", pid));//产品详情url
-	 			  			CloseableHttpResponse edfpes=client.execute(efdget);//
-				  			  String edfpeshrml= EntityUtils.toString(edfpes.getEntity());//
-				  			//  edfpeshrml+="<a id='imgurl' heft='"+newimguri+"'>"+"<a id='flieurl' heft='"+newfileuri+"'>";
-			 	  			 logger.error("详细信息状态:"+edfpes.getStatusLine().getStatusCode()+":"+efdget.getURI().toString());
-			 	  			/***产品详情解析    ent****/	
-			 	  			//
-			 	  		//newfile(filename+"d", edfpeshrml);
-			 	  			logger.error("产品详情的页面保存路径:"+filename);
-			 	  		    Document edfpeshrmldoc = Jsoup.parse(edfpeshrml); 
-			 	  		 
- 			 	  			Elements es= edfpeshrmldoc.select("td[class*=CellValue]");
- 			 			   
-			 				String data[]=new String [toptitle.length];
-		 					 data[0]=tableid;
-		 					 data[1]=tdid;
-		 					 data[2]=pid;
-		 					 data[3]=newimguri;
-		 					 data[4]=newfileuri;
-		 					 data[5]=pagesun;
-		 					Elements es$= edfpeshrmldoc.select("td[class=MelbourneRegularSmallHeader]");	//这个是价格的信息
-		 				//	es.add(es$.get(0));
-		 					//es.add(es$.get(1));
-		 				//	es.add(es$.get(2));
-		 					 System.out.println("找到的CellValue样式数:"+es.size()+"  表头数据数:"+toptitle.length);
-			 				for (int j = 0 ;j < toptitle.length-9; j++) {//序号添加详情页面的数据指标输出  -6是因为data0-5已经写死输出过了. 在多循环就会超过data大小
-			 					//1sagar en 2a sagar 3sambhav 详细信息有的还有好几个table es的size会有好多. 但是第一个table应该是40个  如果变化了 也可能会错误.
-			 					Element element=es.get(j);
-			 					 data[j+6]=element.text().replaceAll(",", "'");
- 							}
-			 				 data[toptitle.length-3]=es$.get(0).text().replaceAll(",", "'");
-			 				 data[toptitle.length-2]=es$.get(1).text().replaceAll(",", "'");
-			 				 data[toptitle.length-1]=es$.get(2).text().replaceAll(",", "'");
-			 				for(String s: data) {
-			 				   System.out.print(s+",");
-			 				  }
-			 				allLines.add(data);
- 			 	  			 //  printResponse(edfpes);
-			  	  			// Headerpachong.newfile(filename, edfpeshrml);
-			  	  		  // edfpes.close();
-			 	  			// break;
-			 				edfpes.close();
+	 			  			   HttpGet efdget= 	Headerpachong.newExpandFullDetails( Headerpachong.efdurl.replaceAll("[%]", pid));//产品详情url
+	 			  		 
+	 			  			  
+	 			  			//  CloseableHttpResponse edfpes=client.execute(efdget);//
+	 			  			  CloseableHttpResponse edfpes= HttpClientUtil.httpGetRequest(client, efdget) ;
+		 		 	   	         if(edfpes==null){
+		 		 	   	        	 //throw new Exception("CloseableHttpResponse 多次链接失败.空");
+		 		 	   	           logger.error(i+"："+pid+"：产品信息多次链接失败.空跳过:"+efdget.getURI());
+		 		 	   	         }else{
+							  			  String edfpeshrml= EntityUtils.toString(edfpes.getEntity());//
+							  			//  edfpeshrml+="<a id='imgurl' heft='"+newimguri+"'>"+"<a id='flieurl' heft='"+newfileuri+"'>";
+						 	  			 logger.error("详细信息状态:"+edfpes.getStatusLine().getStatusCode()+":"+efdget.getURI().toString());
+						 	  			/***产品详情解析    ent****/	
+ 						 	  		//newfile(filename+"d", edfpeshrml);
+						 	  			logger.error("产品详情的页面保存路径:"+filename);
+						 	  		    Document edfpeshrmldoc = Jsoup.parse(edfpeshrml); 
+						 	  		 
+			 			 	  			Elements es= edfpeshrmldoc.select("td[class*=CellValue]");
+			 			 			   
+						 				String data[]=new String [toptitle.length];
+					 					 data[0]=tableid.replaceAll(",", "'");;
+					 					 data[1]=tdid.replaceAll(",", "'");;
+					 					 data[2]=pid.replaceAll(",", "'");;
+					 					 data[3]=newimguri.replaceAll(",", "'");;
+					 					 data[4]=newfileuri.replaceAll(",", "'");;
+					 					 data[5]=pagesun.replaceAll(",", "'");;
+					 					Elements es$= edfpeshrmldoc.select("td[class=MelbourneRegularSmallHeader]");	//这个是价格的信息
+					 				//	es.add(es$.get(0));
+					 					//es.add(es$.get(1));
+					 				//	es.add(es$.get(2));
+					 					 System.out.println("找到的CellValue样式数:"+es.size()+"  表头数据数:"+toptitle.length);
+						 				for (int j = 0 ;j < toptitle.length-9; j++) {//序号添加详情页面的数据指标输出  -6是因为data0-5已经写死输出过了. 在多循环就会超过data大小
+						 					//1sagar en 2a sagar 3sambhav 详细信息有的还有好几个table es的size会有好多. 但是第一个table应该是40个  如果变化了 也可能会错误.
+						 					Element element=es.get(j);
+						 					data[j+6]=element.text().replaceAll(",", "'");
+			 							}
+			 			 				 data[toptitle.length-3]=es$.get(0).text().replaceAll(",", "'");
+						 				 data[toptitle.length-2]=es$.get(1).text().replaceAll(",", "'");
+						 				 data[toptitle.length-1]=es$.get(2).text().replaceAll(",", "'");
+			//			 			    	for(String s: data) {
+			//			 				   System.out.print(s+",");
+			//			 				  }
+						 				allLines.add(data);
+			 			 	  			 //  printResponse(edfpes);
+						  	  			// Headerpachong.newfile(filename, edfpeshrml);
+			 			 	  			// break;
+						 				edfpes.close();
+		 		 	   	      }
 			 				logger.error("---------------");
 			 				logger.error("---------------");
-			 				 
+		 		 	   	   
 		  				} catch (Exception e) {
 		  					e.printStackTrace();
-							logger.error(i+"："+pid+"：产品详情和图片解析异常"+e);
-							
- 							return;
+							logger.error(i+"："+pid+"：产品详情和图片解析异常,停止循环"+e);
+ 							break;
  						} 
 		      
   	    		}else{
@@ -588,7 +602,7 @@ private static String loginurl="https://rapaport.auth0.com/usernamepassword/logi
  	    		}
 			}
  	    	csv.writeAll(allLines);
- 	   
+ 	    	logger.error("结束导出一个页的全部数据:"+filename+":");
  	    	try {
  	    		csv.flush();
 				csv.close();
