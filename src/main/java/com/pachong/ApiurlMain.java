@@ -161,25 +161,12 @@ public class ApiurlMain implements Job{
 //				logger.error(hobj.getName()+":"+hobj.getValue());
 //			 }
 			 
-			 /**-----------访问交易屏页面     starte-------------***/
-			 HttpGet datapost1= Headerpachong.newpagedata4(tuchuurl);//数据屏的页面首页
-		 
-			// CloseableHttpResponse pingdateresponse4=client.execute(datapost1);//执行数据屏
-			 CloseableHttpResponse pingdateresponse4= HttpClientUtil.httpGetRequest(client, datapost1) ;
-	         if(pingdateresponse4==null){
-	        	 throw new Exception("CloseableHttpResponse 多次链接失败.空");
-	         }
-			 tuchuurl=datapost1.getURI().toString();
-			 logger.error("交易屏状态:"+pingdateresponse4.getStatusLine().getStatusCode() );
-			 String datahrml= EntityUtils.toString(pingdateresponse4.getEntity());//得到paga注册code 和注册url
-		//	 Headerpachong.newfile("d:\\s2.html", datahrml);
- 			//#####
-			 pingdateresponse4.close();
-			 /**-----------访问交易屏页面     ent-------------***/
+			
+		
  
 			 
 			 /**-----------访问 交易屏  某一个交易单元格   打卡数据列表     starte-------------***/
-			  Document doc2 = Jsoup.parse(datahrml); //交易盘的页面解析器
+			
  			
  			  String [] tableidzi=new String []{"ctl00_cphMainContent_repGrids_ctl00_gvGrid",
 					  "ctl00_cphMainContent_repGrids_ctl02_gvGrid","ctl00_cphMainContent_repGrids_ctl04_gvGrid"
@@ -189,6 +176,23 @@ public class ApiurlMain implements Job{
 			  				  };//第1个表
 			  /*****这个是循环一个表的输出开始******/
 			  for(int tableshu=0;tableshu<tableidzi.length;tableshu++){
+				  
+				  /**-----------访问交易屏页面     starte-------------***/
+					 HttpGet datapost1= Headerpachong.newpagedata4(tuchuurl);//数据屏的页面首页
+ 					// CloseableHttpResponse pingdateresponse4=client.execute(datapost1);//执行数据屏
+					 CloseableHttpResponse pingdateresponse4= HttpClientUtil.httpGetRequest(client, datapost1) ;
+			         if(pingdateresponse4==null){
+			        	 throw new Exception("方法数据屏的时候   终止CloseableHttpResponse 多次链接失败.空"+tableidzi[tableshu]);
+			         }
+					 tuchuurl=datapost1.getURI().toString();
+					 logger.error("交易屏状态:"+pingdateresponse4.getStatusLine().getStatusCode() );
+					 String datahrml= EntityUtils.toString(pingdateresponse4.getEntity());//得到paga注册code 和注册url
+				//	 Headerpachong.newfile("d:\\s2.html", datahrml);
+		 			//#####
+					 pingdateresponse4.close();
+					  Document doc2 = Jsoup.parse(datahrml); //交易盘的页面解析器
+				  /**-----------访问交易屏页面     ent-------------***/
+					  
   			  //String lblColor="ctl00_cphMainContent_repGrids_ctl00_gvGrid_ctl%_lblColor";//这个存储的是一行数据的集合 总共11行
  			//  String tdid="ctl00_cphMainContent_repGrids_ctl00_gvGrid_ctl02_lnk_IF_Value";//表中一行的的一个单元格
 			  String tablehtml=doc2.getElementById(tableidzi[tableshu]).html();//读取一个表的html
@@ -200,12 +204,12 @@ public class ApiurlMain implements Job{
 					String cid=objspen.attr("id");//单元格的id
 					String ahref=objspen.attr("href");//单元格的链接
 					String ctext=objspen.text();//单元格的内容
-					if((cid+"@"+ctext).equals("ctl00_cphMainContent_repGrids_ctl00_gvGrid_ctl02_lnk_IF_Value@9,650 -52%")){
-						continue;
-					}
-					if((cid+"@"+ctext).equals("ctl00_cphMainContent_repGrids_ctl00_gvGrid_ctl02_lnk_VVS1_Value@8,125 -49%")){
-						continue;
-					}
+//					if((cid+"@"+ctext).equals("ctl00_cphMainContent_repGrids_ctl00_gvGrid_ctl02_lnk_IF_Value@9,650 -52%")){
+//						continue;
+//					}
+//					if((cid+"@"+ctext).equals("ctl00_cphMainContent_repGrids_ctl00_gvGrid_ctl02_lnk_VVS1_Value@8,125 -49%")){
+//						continue;
+//					}
   				//	String ahref=anode.attr("href");//得到第1个单元格的点击url地址
 	 	    		 String ahrefurl[]=ahref.split("\\."+"\\."+"/");//要把路径的../截取掉.
 	 	    		 if(ahrefurl.length!=2){
@@ -245,14 +249,15 @@ public class ApiurlMain implements Job{
 	  	  		 	}
 	  	  		String pagesun="0";
 	  	  		 	if(newpagetablehrmldoc.getElementById(headid+"_cphMainContent_lblPageNumBottom")!=null){
-	  	  		 	/**如果文件不存在  就输出第一页的文件**/
+	  	  		 
 	  	  			  pagesun=newpagetablehrmldoc.getElementById(headid+"_cphMainContent_lblPageNumBottom").text();//第几页数据
 	  	  		 	}
-	  	  		
- 	  	  		String filename="d:\\spaga\\"+tableidzi[tableshu]+"\\"+cid+"@"+ctext+"\\"+pagesun+".csv";
-	 			if(!new File(filename).exists()){
+  	  	  		//String filename="d:\\spaga\\"+tableidzi[tableshu]+"\\"+cid+"@"+ctext+"\\"+pagesun+".csv";
+	  	  		String filename="d:\\spaga\\"+tableidzi[tableshu]+"\\"+cid+"\\"+pagesun+".csv";
+ 	  	  		/**如果文件不存在  就输出第一页的文件**/
+ 	  	  		if(!new File(filename).exists()){
 	 				 //这个是第一页的数据 第一页进入列表时已经有了, 不用再次读取了. 
-		  			 Headerpachong.OutputPage(tableidzi[tableshu], cid+"@"+ctext, newpagetablehrmldoc, client);
+		  			 Headerpachong.OutputPage(tableidzi[tableshu], cid,ctext, newpagetablehrmldoc, client);
 	 			}else{
 	 				 logger.error("文件已经存在跳过第一页:"+filename);
 	 			}
@@ -264,7 +269,7 @@ public class ApiurlMain implements Job{
 	  	  		 	for (int i = 2; i <=pagecount; i++) {
 	  	  		 		try {
 	  	  	  		 	/**如果文件存在  就跳过翻页. 避免重复下载.**/
- 	  	   	  	  		  filename="d:\\spaga\\"+tableidzi[tableshu]+"\\"+cid+"@"+ctext+"\\"+i+".csv";
+ 	  	   	  	  		  filename="d:\\spaga\\"+tableidzi[tableshu]+"\\"+cid+"\\"+i+".csv";
 		  	  	 			if(new File(filename).exists()){
 		  	  	 				 logger.error("文件已经存在跳过翻页:"+filename);
 		  	  	 				 continue;
@@ -282,7 +287,7 @@ public class ApiurlMain implements Job{
 						//	 Headerpachong.newfile("d://"+i+"sas.html", newpagetablehrml2);
 							   Document newfanyedoc = Jsoup.parse(newpagetablehrml2); 
 							//输出分页数据的csv文件
-							 Headerpachong.OutputPage(tableidzi[tableshu], cid+"@"+ctext,newfanyedoc, client);
+							 Headerpachong.OutputPage(tableidzi[tableshu], cid,ctext,newfanyedoc, client);
 	 						responsefanye.close();
 						} catch (Exception e) {
 	 						e.printStackTrace();

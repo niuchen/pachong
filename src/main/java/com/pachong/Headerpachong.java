@@ -437,10 +437,11 @@ private static String loginurl="https://rapaport.auth0.com/usernamepassword/logi
 	 * tableid 数据屏某大的ctl表格的名称
 	 * tdid  数据屏某个大的ctl表格中的一个单元格的名称
 	 * pid 产品id
+	 * ctext 单元格的内容 这个是动态变动的 所以不能用于文件名 格式如:8,050 -30%  ctext 但是输出的适合可以和tdid拼接成一个数据 @分割
 	 * newpagetablehrmldoc   这个是单元格里面的产品列表的html封装
 	 * cilent  链接
 	 * ****/
-	public static void OutputPage(String tableid,String tdid ,Document newpagetablehrmldoc,CloseableHttpClient client){
+	public static void OutputPage(String tableid,String tdid,String ctext,Document newpagetablehrmldoc,CloseableHttpClient client){
 		//	String headid=newpagetablehrmldoc.select("head").get(0).attr("id").split("_")[0];//获取head的内容当前查询的ctl 是多少  表示属于那个大模块  head表情的id有一个
 			String headid="ctl00";
 			String pagesun="0";
@@ -477,8 +478,7 @@ private static String loginurl="https://rapaport.auth0.com/usernamepassword/logi
  	    		Elements filee=newpagetablehrmldoc.getElementById(file).select("a");
  	    		Elements imagere=newpagetablehrmldoc.getElementById(imager).select("a");
  	    		if(filee.size()==1&&imagere.size()==1){
-  	    			 
- 	    			String fileeheft=Headerpachong.root+filee.get(0).attr("href");
+  	    			String fileeheft=Headerpachong.root+filee.get(0).attr("href");
  	    			String imagereheft=Headerpachong.root+imagere.get(0).attr("href");
  	    		    String newfileuri="";//存储文件地址
 				    String newimguri="";//存储图片地址
@@ -561,7 +561,7 @@ private static String loginurl="https://rapaport.auth0.com/usernamepassword/logi
 			 			 			   
 						 				String data[]=new String [toptitle.length];
 					 					 data[0]=tableid.replaceAll(",", "'");;
-					 					 data[1]=tdid.replaceAll(",", "'");;
+					 					 data[1]=(tdid+"@"+ctext).replaceAll(",", "'");;
 					 					 data[2]=pid.replaceAll(",", "'");;
 					 					 data[3]=newimguri.replaceAll(",", "'");;
 					 					 data[4]=newfileuri.replaceAll(",", "'");;
